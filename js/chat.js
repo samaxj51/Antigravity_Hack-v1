@@ -356,13 +356,24 @@ const ChatEngine = {
         this.step = 10;
         break;
 
+      case 10:
+        this.handleSafetyResponse(userText);
+        break;
+
       default:
+        if (this.step >= 10 || userText.toLowerCase().includes("formal") || userText.toLowerCase().includes("report")) {
+          this.startFormalReportingFlow();
+        }
         break;
     }
   },
 
   // 🚨 IMMEDIATE SAFETY INTERVENTION PATHWAY
   handleSafetyResponse(responseVal) {
+    if (responseVal.toLowerCase().includes("formal") || responseVal.toLowerCase().includes("confidential") || responseVal.toLowerCase().includes("report")) {
+      this.startFormalReportingFlow();
+      return;
+    }
     this.addUserMessage(`Safety status: ${responseVal}`);
 
     if (responseVal === "No" || responseVal === "Not sure") {

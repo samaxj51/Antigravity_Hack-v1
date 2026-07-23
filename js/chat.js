@@ -99,7 +99,6 @@ const ChatEngine = {
         <div class="chat-bubble">
           <p>How can I support you today? Select a pathway or type/record your thoughts in your own words:</p>
           <div class="chat-options-grid">
-            <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:700; background:rgba(31, 122, 140, 0.06);" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
             <button class="chat-opt-btn" onclick="ChatEngine.startMentalHealthAssessment()">🌿 Mental Health & Well-being Support</button>
             <button class="chat-opt-btn" onclick="ChatEngine.startBiasnessAssessment()">⚖️ Report Biasness, Favouritism or Exclusion</button>
             <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Workplace Concern')">💬 Report General Workplace Concern</button>

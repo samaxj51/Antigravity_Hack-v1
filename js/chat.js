@@ -124,7 +124,7 @@ const ChatEngine = {
           <span style="font-size:0.76rem; color:var(--text-muted);">We will evaluate your workplace wellbeing needs and connect you directly with support resources or confidential reporting.</span>
         </div>
         <p>${this.getRandomEmpatheticStatement()}</p>
-        <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 1 of 10:</p>
+        <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 1 of 5:</p>
         <p style="margin-top:2px;">${this.mentalHealthQuestions[0]}</p>
         <div class="chat-options-grid">
           <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Workload & Stress')">Workload & Stress</button>

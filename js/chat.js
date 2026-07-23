@@ -44,18 +44,13 @@ const ChatEngine = {
     "Do you feel safe at the moment?"
   ],
 
-  // 10 BIASNESS & INCLUSION RISK QUESTIONS
+  // 5 STREAMLINED HIGH-RELEVANCE BIASNESS & INCLUSION RISK QUESTIONS
   biasnessQuestions: [
-    "What specific action, decision, or behaviour made you feel that you were treated unfairly or excluded?",
-    "In what context did this occur? (For example: recruitment, promotion, performance review, compensation, work allocation, meetings, career opportunities, recognition, or day-to-day interactions)",
-    "Were you treated differently from one or more colleagues in a similar situation? If yes, please describe the difference in treatment.",
-    "Did you observe others with similar qualifications, experience, or circumstances receiving different treatment or opportunities?",
-    "Did the situation involve a decision made by someone with authority over you? If yes, what decision was made and how did it affect you?",
-    "Did you feel that your views, ideas, or contributions were overlooked, dismissed, or not given the same consideration as others?",
-    "Were you excluded from any meetings, discussions, networks, projects, or opportunities that you would reasonably have expected to participate in?",
-    "Did you notice any comments, language, or behaviour that you believe reflected stereotypes, assumptions, or preferences about you or another person?",
-    "Did you raise the issue or seek clarification from the person involved or another colleague? If yes, what response did you receive?",
-    "Has this situation affected your access to future opportunities, career development, recognition, or ability to participate fully at work?"
+    "What specific situation, decision, or behaviour made you feel treated unfairly, biased, or excluded?",
+    "In what context did this occur? (e.g. Promotion, Performance Review, Work Allocation, Compensation, Meetings)",
+    "Did this situation involve someone with authority over you, and were you treated differently from colleagues in similar circumstances?",
+    "Did you observe language, comments, or decisions reflecting stereotypes, preferences, or intentional exclusion?",
+    "Has this situation affected your career development, recognition, or ability to participate fully at work?"
   ],
 
   standardQuestions: [
@@ -153,10 +148,10 @@ const ChatEngine = {
       this.addAiMessage(`
         <div style="background:rgba(31, 122, 140, 0.08); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px; margin-bottom:8px;">
           <strong>⚖️ Biasness & Inclusion Risk Assessment Mode Active</strong><br/>
-          <span style="font-size:0.76rem; color:var(--text-muted);">I will ask 10 structured questions to analyze the risk score for biasness and inclusion.</span>
+          <span style="font-size:0.76rem; color:var(--text-muted);">I will ask 5 structured questions to analyze the risk score for biasness and inclusion.</span>
         </div>
         <p>${this.getRandomEmpatheticStatement()}</p>
-        <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 1 of 10:</p>
+        <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 1 of 5:</p>
         <p style="margin-top:2px;">${this.biasnessQuestions[0]}</p>
       `);
       this.step = 1;
@@ -361,6 +356,7 @@ const ChatEngine = {
     }
   },
 
+  // BIASNESS & INCLUSION STEP PROCESSOR (STREAMLINED 5-QUESTION FLOW)
   processBiasnessStep(userText) {
     const statement = this.getRandomEmpatheticStatement();
 
@@ -369,13 +365,13 @@ const ChatEngine = {
         this.chatData.description = userText;
         this.addAiMessage(`
           <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 2 of 10:</p>
+          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 2 of 5:</p>
           <p style="margin-top:2px;">${this.biasnessQuestions[1]}</p>
           <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Promotion & Advancement')">Promotion & Advancement</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Performance Review')">Performance Review</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Work Allocation')">Work Allocation</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Meetings & Visibility')">Meetings & Visibility</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Promotion & Career Advancement')">Promotion & Career Advancement</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Performance Review & Evaluation')">Performance Review</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Work Allocation & Project Assignments')">Work Allocation</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Meetings & Communication Inclusion')">Meetings & Inclusion</button>
             <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Compensation & Rewards')">Compensation & Rewards</button>
           </div>
         `);
@@ -384,98 +380,59 @@ const ChatEngine = {
 
       case 2:
         this.chatData.context = userText;
-        this.biasRiskScore += 10;
+        this.biasRiskScore += 15;
         this.addAiMessage(`
           <p>Understood. Context is crucial for evaluation. ${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 3 of 10:</p>
+          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 3 of 5:</p>
           <p style="margin-top:2px;">${this.biasnessQuestions[2]}</p>
+          <div class="chat-options-grid">
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, authority figure involved & clear differential treatment')">Yes - Authority & Differential Treatment</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, differential treatment observed among peers')">Yes - Differential Treatment Observed</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Partially or unsure')">Partially / Unsure</button>
+          </div>
         `);
         this.step = 3;
         break;
 
       case 3:
         this.chatData.differentialTreatment = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 15;
+        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 20;
         this.addAiMessage(`
           <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 4 of 10:</p>
+          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 4 of 5:</p>
           <p style="margin-top:2px;">${this.biasnessQuestions[3]}</p>
+          <div class="chat-options-grid">
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, language or comments reflecting stereotypes noted')">Yes - Stereotypes or Language Noted</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, excluded from key meetings or discussions')">Yes - Excluded from Meetings/Decisions</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('No explicit comments noted')">No Explicit Comments</button>
+          </div>
         `);
         this.step = 4;
         break;
 
       case 4:
-        this.chatData.observedOthers = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 15;
+        this.chatData.stereotypesObserved = userText;
+        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 20;
         this.addAiMessage(`
           <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 5 of 10:</p>
+          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Final Question (5 of 5):</p>
           <p style="margin-top:2px;">${this.biasnessQuestions[4]}</p>
+          <div class="chat-options-grid">
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('High Impact on career advancement & recognition')">High Impact on Career & Advancement</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Moderate Impact on morale & daily participation')">Moderate Impact on Morale</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Low Impact - Recent single situation')">Low Impact - Recent Incident</button>
+          </div>
         `);
         this.step = 5;
         break;
 
       case 5:
-        this.chatData.authorityInvolved = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 15;
-        this.addAiMessage(`
-          <p>Thank you. ${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 6 of 10:</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[5]}</p>
-        `);
-        this.step = 6;
-        break;
-
-      case 6:
-        this.chatData.ideasOverlooked = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 10;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 7 of 10:</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[6]}</p>
-        `);
-        this.step = 7;
-        break;
-
-      case 7:
-        this.chatData.excludedFromMeetings = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 10;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 8 of 10:</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[7]}</p>
-        `);
-        this.step = 8;
-        break;
-
-      case 8:
-        this.chatData.stereotypesObserved = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 15;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 9 of 10:</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[8]}</p>
-        `);
-        this.step = 9;
-        break;
-
-      case 9:
-        this.chatData.raisedClarification = userText;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Final Question (10 of 10):</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[9]}</p>
-        `);
-        this.step = 10;
-        break;
-
-      case 10:
         this.chatData.futureCareerImpact = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 10;
+        if (userText.toLowerCase().includes("high") || userText.toLowerCase().includes("yes")) this.biasRiskScore += 25;
 
         let riskLevel = "Low Risk";
         let riskBadgeColor = "#2D6A4F";
-        if (this.biasRiskScore >= 60) {
+        if (this.biasRiskScore >= 50) {
           riskLevel = "Critical Risk";
           riskBadgeColor = "#E63946";
         } else if (this.biasRiskScore >= 35) {
@@ -493,7 +450,7 @@ const ChatEngine = {
               <span style="background:${riskBadgeColor}; color:white; padding:3px 10px; border-radius:12px; font-size:0.72rem; font-weight:800;">${riskLevel} (${this.biasRiskScore}/100)</span>
             </div>
             <p style="margin-top:8px; font-size:0.8rem;">
-              Your evaluation indicates a <strong>${riskLevel}</strong> of biasness or exclusion. Would you like to submit this anonymously to the Ombudsperson?
+              Your evaluation indicates a <strong>${riskLevel}</strong> of biasness or exclusion. Select an action below to complete your submission:
             </p>
             <div class="chat-options-grid" style="margin-top:10px;">
               <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:700; background:rgba(31, 122, 140, 0.06);" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
@@ -501,10 +458,13 @@ const ChatEngine = {
             </div>
           </div>
         `);
-        this.step = 11;
+        this.step = 6;
         break;
 
       default:
+        if (this.step >= 5 || userText.toLowerCase().includes("formal") || userText.toLowerCase().includes("report")) {
+          this.startFormalReportingFlow();
+        }
         break;
     }
   },

@@ -804,3 +804,6 @@ const ChatEngine = {
     }
   }
 };
+
+window.ChatEngine = ChatEngine;
+

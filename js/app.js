@@ -54,24 +54,31 @@ const App = {
     this.currentRole = role;
     const empContainer = document.getElementById("employeeView");
     const invContainer = document.getElementById("investigatorView");
+    const repContainer = document.getElementById("reportingView");
     const empBtn = document.getElementById("roleBtnEmployee");
     const invBtn = document.getElementById("roleBtnInvestigator");
+    const repBtn = document.getElementById("roleBtnReporting");
+
+    empContainer.style.display = role === "employee" ? "flex" : "none";
+    invContainer.style.display = role === "investigator" ? "flex" : "none";
+    repContainer.style.display = role === "reporting" ? "flex" : "none";
+
+    [empBtn, invBtn, repBtn].forEach(btn => {
+      btn.classList.remove("active");
+      btn.setAttribute("aria-checked", "false");
+    });
 
     if (role === "employee") {
-      empContainer.style.display = "flex";
-      invContainer.style.display = "none";
       empBtn.classList.add("active");
       empBtn.setAttribute("aria-checked", "true");
-      invBtn.classList.remove("active");
-      invBtn.setAttribute("aria-checked", "false");
-    } else {
-      empContainer.style.display = "none";
-      invContainer.style.display = "flex";
-      empBtn.classList.remove("active");
-      empBtn.setAttribute("aria-checked", "false");
+    } else if (role === "investigator") {
       invBtn.classList.add("active");
       invBtn.setAttribute("aria-checked", "true");
       DashboardModule.renderCharts();
+    } else if (role === "reporting") {
+      repBtn.classList.add("active");
+      repBtn.setAttribute("aria-checked", "true");
+      ReportingModule.init();
     }
   },
 
@@ -196,6 +203,9 @@ const App = {
   }
 };
 
+window.App = App;
+
 window.onload = () => {
   App.init();
 };
+

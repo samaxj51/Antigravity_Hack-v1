@@ -60,3 +60,6 @@ const AiIntelligence = {
     }, 600);
   }
 };
+
+window.AiIntelligence = AiIntelligence;
+

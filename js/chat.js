@@ -808,7 +808,7 @@ const ChatEngine = {
 
   finalizeReport(isAnonymous) {
     this.chatData.anonymous = isAnonymous;
-    this.addUserMessage(isAnonymous ? "I would prefer to submit this report completely anonymously." : "You may include my identity.");
+    this.addUserMessage(isAnonymous ? "I would like to submit this report confidentially & anonymously." : "I am submitting this report with my identity (Jordan Smith).");
 
     this.showTypingIndicator();
 
@@ -816,7 +816,7 @@ const ChatEngine = {
       this.hideTypingIndicator();
       const caseId = "LIS-" + Math.floor(100000 + Math.random() * 900000);
 
-      CASES_DATA.unshift({
+      const caseObj = {
         id: caseId,
         category: this.chatData.category || "Mental Health & Well-being",
         risk: this.mentalHealthRiskScore >= 30 ? "high" : "moderate",
@@ -826,22 +826,110 @@ const ChatEngine = {
         anonymous: isAnonymous,
         summary: this.chatData.description || "Wellbeing and workplace factors report.",
         impact: this.chatData.dailyImpact || "High wellbeing impact"
-      });
+      };
+
+      CASES_DATA.unshift(caseObj);
 
       this.addAiMessage(`
-        <div style="background:var(--secondary-sage-light); border:1px solid var(--border-accent); padding:14px; border-radius:10px;">
-          <h4 style="color:var(--primary-teal-dark); margin-bottom:6px;">✅ Confidential Case Report Submitted</h4>
-          <p><strong>Tracking Case ID:</strong> <span style="font-family:monospace; background:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">${caseId}</span></p>
-          <p style="margin-top:6px; font-size:0.8rem;">
-            Thank you for sharing something that may have been difficult to talk about. Your report has been routed securely to an assigned Independent Ombudsperson under strict 24h SLA.
-          </p>
-          <p style="margin-top:8px; font-size:0.75rem; color:var(--text-muted);">
-            🔒 Identity Status: <strong>${isAnonymous ? '100% Anonymous' : 'Named Report (Jordan Smith)'}</strong>
-          </p>
+        <div class="ticket-generated-card" style="background:var(--bg-card); border:2px solid var(--primary-teal); border-radius:12px; padding:18px; margin-top:8px; box-shadow:var(--shadow-md);">
+          
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.4rem;">🎫</span>
+              <div>
+                <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Formal Case Ticket Generated</h4>
+                <span style="font-size:0.72rem; color:var(--text-muted);">Confidential Case Reference</span>
+              </div>
+            </div>
+            <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:3px 10px; border-radius:var(--radius-pill); font-size:0.72rem; font-weight:800;">
+              ● Active / Submitted
+            </span>
+          </div>
+
+          <div style="margin-top:12px; background:rgba(31, 122, 140, 0.05); border:1.5px dashed var(--border-accent); border-radius:8px; padding:12px; text-align:center;">
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; display:block;">Your Unique Ticket Number</span>
+            <div style="font-family:monospace; font-size:1.6rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px; margin-top:2px;">
+              ${caseId}
+            </div>
+            <span style="font-size:0.7rem; color:var(--primary-teal-dark); margin-top:2px; display:block;">🔒 100% Encrypted & Confidential</span>
+          </div>
+
+          <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.76rem; color:var(--text-main);">
+            <div style="background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
+              <span style="color:var(--text-muted); font-weight:600; display:block;">Category:</span>
+              <strong>${this.chatData.category || "Mental Health & Wellbeing"}</strong>
+            </div>
+            <div style="background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
+              <span style="color:var(--text-muted); font-weight:600; display:block;">Reporter Status:</span>
+              <strong>${isAnonymous ? '100% Anonymous' : 'Named (Jordan Smith)'}</strong>
+            </div>
+            <div style="background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
+              <span style="color:var(--text-muted); font-weight:600; display:block;">SLA Target:</span>
+              <strong>24 Hours Initial Review</strong>
+            </div>
+            <div style="background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
+              <span style="color:var(--text-muted); font-weight:600; display:block;">Assigned To:</span>
+              <strong>Independent Ombudsperson</strong>
+            </div>
+          </div>
+
+          <div style="margin-top:14px; display:flex; gap:8px;">
+            <button class="chat-opt-btn" style="flex:1; background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px; border-radius:8px; cursor:pointer;" onclick="ChatEngine.trackTicketById('${caseId}')">
+              🔎 Track My Report Status
+            </button>
+            <button class="chat-opt-btn" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; padding:10px 14px; text-align:center; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${caseId}')">
+              📋 Copy Ticket #
+            </button>
+          </div>
+
         </div>
       `);
       this.step = 99;
-    }, 1600);
+    }, 1400);
+  },
+
+  trackTicketById(caseId) {
+    this.addUserMessage(`Track status for Ticket Number: ${caseId}`);
+    this.showTypingIndicator();
+
+    setTimeout(() => {
+      this.hideTypingIndicator();
+      const found = CASES_DATA.find(c => c.id.toUpperCase() === caseId.toUpperCase());
+      const statusLabel = found ? found.status.toUpperCase() : "SUBMITTED / ACTIVE";
+
+      this.addAiMessage(`
+        <div class="ticket-status-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:10px; padding:14px; margin-top:6px; box-shadow:var(--shadow-sm);">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:1.2rem;">🔎</span>
+              <strong style="color:var(--primary-teal); font-size:0.9rem;">Ticket Status: ${caseId}</strong>
+            </div>
+            <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
+              ● ${statusLabel}
+            </span>
+          </div>
+          <div style="margin-top:10px; font-size:0.8rem; color:var(--text-main); line-height:1.45;">
+            <p><strong>Latest Update:</strong> Your confidential report is assigned to the Independent Ombudsperson team.</p>
+            <p style="margin-top:4px; font-size:0.75rem; color:var(--text-muted);">
+              SLA Commitment: 24-hour review guarantee. All communication remains 100% confidential.
+            </p>
+          </div>
+          <div style="margin-top:10px; font-size:0.72rem; color:var(--text-dim); display:flex; justify-content:space-between; padding-top:6px; border-top:1px dashed var(--border-color);">
+            <span>Submitted: ${found ? found.created : 'Just now'}</span>
+            <span>Ref: <code>${caseId}</code></span>
+          </div>
+        </div>
+      `);
+    }, 1000);
+  },
+
+  copyTicketNumber(caseId) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(caseId);
+      alert(`Ticket Number ${caseId} copied to clipboard!`);
+    } else {
+      alert(`Ticket Number: ${caseId}`);
+    }
   },
 
   toggleVoiceRecording() {

@@ -306,7 +306,389 @@ const INITIAL_SAMPLE_CASES = [
 ];
 
 window.POLICIES_DATA = POLICIES_DATA;
-window.LEARNING_DATA = LEARNING_DATA;
-window.MHFA_CONNECT_DATA = MHFA_CONNECT_DATA;
-window.MOCK_INCIDENTS = MOCK_INCIDENTS;
+window.LEARNING_DATA = typeof LEARNING_DATA !== 'undefined' ? LEARNING_DATA : undefined;
+window.MHFA_CONNECT_DATA = typeof MHFA_CONNECT_DATA !== 'undefined' ? MHFA_CONNECT_DATA : undefined;
+window.MOCK_INCIDENTS = typeof MOCK_INCIDENTS !== 'undefined' ? MOCK_INCIDENTS : undefined;
+
+// Multi-Level Reporting Hierarchy Mock Data (HR Head / Regional / Divisional / Site)
+const REPORTING_DATA = {
+  orgWide: {
+    totalCases: 214,
+    safetyScore: 91.2,
+    avgResolution: 4.1,
+    highRiskPct: 11,
+    anonymousRatio: 58,
+    trendPct: -6.4,
+    monthlyIntakeVol: 40,
+    postInvestigationSatisfaction: 87.8,
+    reopenedCaseRate: 3.7,
+    trainingCoveragePct: 76
+  },
+  regions: [
+    { id: "na", name: "North America", icon: "🗽", cases: 68, highRisk: 9, safetyScore: 92.6, avgResolution: 3.6, topCategory: "Workplace Behaviour", trendPct: -8.1, sitesCount: 2, divisionsCount: 4 },
+    { id: "emea", name: "EMEA", icon: "🌍", cases: 61, highRisk: 8, safetyScore: 90.4, avgResolution: 4.3, topCategory: "Bullying / Harassment", trendPct: 3.2, sitesCount: 3, divisionsCount: 4 },
+    { id: "apac", name: "APAC", icon: "🌏", cases: 59, highRisk: 5, safetyScore: 93.1, avgResolution: 3.9, topCategory: "Well-being / Mental Health", trendPct: -11.5, sitesCount: 2, divisionsCount: 3 },
+    { id: "latam", name: "LATAM", icon: "🌎", cases: 26, highRisk: 2, safetyScore: 89.8, avgResolution: 5.2, topCategory: "Ethics / Conduct", trendPct: 5.0, sitesCount: 1, divisionsCount: 2 }
+  ],
+  divisions: [
+    { id: "eng", name: "Engineering & Technology", icon: "💻", cases: 52, highRisk: 6, safetyScore: 93.4, avgResolution: 3.4, topCategory: "Workplace Behaviour", trendPct: -9.0, headcount: 1840 },
+    { id: "sales", name: "Sales & Marketing", icon: "📈", cases: 47, highRisk: 7, safetyScore: 88.9, avgResolution: 4.6, topCategory: "Manager / Leadership Concern", trendPct: 4.4, headcount: 1120 },
+    { id: "ops", name: "Operations & Supply Chain", icon: "📦", cases: 44, highRisk: 5, safetyScore: 90.1, avgResolution: 4.8, topCategory: "Ethics / Conduct", trendPct: -2.1, headcount: 980 },
+    { id: "finance", name: "Finance & Corporate", icon: "💰", cases: 31, highRisk: 4, safetyScore: 92.8, avgResolution: 3.9, topCategory: "Policy Violation", trendPct: -5.6, headcount: 640 },
+    { id: "cs", name: "Customer Success & Support", icon: "🎧", cases: 40, highRisk: 2, safetyScore: 94.2, avgResolution: 3.2, topCategory: "Well-being / Mental Health", trendPct: -13.7, headcount: 860 }
+  ],
+  sites: [
+    { id: "nyc", name: "New York HQ", region: "North America", division: "Finance & Corporate", icon: "🏙️", cases: 38, highRisk: 5, safetyScore: 91.8, avgResolution: 3.7, topCategory: "Workplace Behaviour", trendPct: -7.2, headcount: 720 },
+    { id: "sf", name: "San Francisco Tech Hub", region: "North America", division: "Engineering & Technology", icon: "🌉", cases: 30, highRisk: 4, safetyScore: 93.5, avgResolution: 3.2, topCategory: "Manager / Leadership Concern", trendPct: -9.8, headcount: 640 },
+    { id: "london", name: "London Office", region: "EMEA", division: "Sales & Marketing", icon: "🇬🇧", cases: 27, highRisk: 4, safetyScore: 89.6, avgResolution: 4.5, topCategory: "Bullying / Harassment", trendPct: 6.1, headcount: 510 },
+    { id: "berlin", name: "Berlin R&D Center", region: "EMEA", division: "Engineering & Technology", icon: "🇩🇪", cases: 19, highRisk: 2, safetyScore: 92.9, avgResolution: 3.8, topCategory: "Ethics / Conduct", trendPct: -4.4, headcount: 420 },
+    { id: "dubai", name: "Dubai Regional Office", region: "EMEA", division: "Sales & Marketing", icon: "🇦🇪", cases: 15, highRisk: 2, safetyScore: 88.2, avgResolution: 5.1, topCategory: "Policy Violation", trendPct: 8.7, headcount: 260 },
+    { id: "blr", name: "Bangalore Tech Park", region: "APAC", division: "Engineering & Technology", icon: "🇮🇳", cases: 34, highRisk: 3, safetyScore: 93.7, avgResolution: 3.5, topCategory: "Well-being / Mental Health", trendPct: -12.9, headcount: 980 },
+    { id: "sgp", name: "Singapore Hub", region: "APAC", division: "Sales & Marketing", icon: "🇸🇬", cases: 25, highRisk: 2, safetyScore: 92.4, avgResolution: 4.0, topCategory: "Conflict / Interpersonal Issue", trendPct: -6.0, headcount: 390 },
+    { id: "sp", name: "São Paulo Office", region: "LATAM", division: "Operations & Supply Chain", icon: "🇧🇷", cases: 26, highRisk: 2, safetyScore: 89.8, avgResolution: 5.2, topCategory: "Ethics / Conduct", trendPct: 5.0, headcount: 340 }
+  ]
+};
+
+// Case Type Taxonomy - used specifically in the Site Head deep-dive analytics view
+const CASE_TYPES = [
+  { type: "Harassment", color: "#B0727A" },
+  { type: "Compensation", color: "#1F7A8C" },
+  { type: "Financial Fraud", color: "#C6A15B" },
+  { type: "Treatment Disparity", color: "#8ECDF0" },
+  { type: "Facilities", color: "#2D6A4F" },
+  { type: "Real Estate", color: "#8B7FA8" },
+  { type: "Other", color: "#A8D5BA" }
+];
+
+// Baseline average ageing (days) per case type, used to derive per-site ageing charts
+const BASE_AGEING_DAYS = {
+  "Harassment": 6.5,
+  "Compensation": 4.0,
+  "Financial Fraud": 9.5,
+  "Treatment Disparity": 7.0,
+  "Facilities": 2.5,
+  "Real Estate": 5.5,
+  "Other": 4.5
+};
+
+// Per-site deep-dive data, used only inside the Site Head Reporting Dashboard view
+const SITE_DETAIL_DATA = {
+  nyc: {
+    monthlyIntakeVol: 7,
+    postInvestigationSatisfaction: 88,
+    reopenedCaseRate: 3.6,
+    caseTypeWeights: { "Harassment": 0.28, "Compensation": 0.18, "Financial Fraud": 0.16, "Treatment Disparity": 0.12, "Facilities": 0.10, "Real Estate": 0.08, "Other": 0.08 },
+    divisionMix: [
+      { division: "Finance & Corporate", cases: 18 },
+      { division: "Sales & Marketing", cases: 9 },
+      { division: "Operations & Supply Chain", cases: 7 },
+      { division: "Engineering & Technology", cases: 4 }
+    ],
+    repeatOffenders: [
+      { ref: "MGR-1042", casesCount: 3, categories: ["Harassment", "Treatment Disparity"], status: "Under Investigation" },
+      { ref: "SUP-0871", casesCount: 2, categories: ["Compensation"], status: "Resolved" }
+    ]
+  },
+  sf: {
+    monthlyIntakeVol: 6,
+    postInvestigationSatisfaction: 91,
+    reopenedCaseRate: 2.4,
+    caseTypeWeights: { "Harassment": 0.18, "Compensation": 0.22, "Financial Fraud": 0.10, "Treatment Disparity": 0.16, "Facilities": 0.14, "Real Estate": 0.08, "Other": 0.12 },
+    divisionMix: [
+      { division: "Engineering & Technology", cases: 14 },
+      { division: "Sales & Marketing", cases: 6 },
+      { division: "Operations & Supply Chain", cases: 5 },
+      { division: "Finance & Corporate", cases: 5 }
+    ],
+    repeatOffenders: [
+      { ref: "LEAD-0219", casesCount: 2, categories: ["Compensation", "Treatment Disparity"], status: "Under Investigation" }
+    ]
+  },
+  london: {
+    monthlyIntakeVol: 5,
+    postInvestigationSatisfaction: 84,
+    reopenedCaseRate: 5.1,
+    caseTypeWeights: { "Harassment": 0.30, "Compensation": 0.14, "Financial Fraud": 0.12, "Treatment Disparity": 0.18, "Facilities": 0.08, "Real Estate": 0.06, "Other": 0.12 },
+    divisionMix: [
+      { division: "Sales & Marketing", cases: 13 },
+      { division: "Engineering & Technology", cases: 6 },
+      { division: "Finance & Corporate", cases: 5 },
+      { division: "Customer Success & Support", cases: 3 }
+    ],
+    repeatOffenders: [
+      { ref: "MGR-0733", casesCount: 3, categories: ["Harassment"], status: "Escalated" },
+      { ref: "SUP-0456", casesCount: 2, categories: ["Treatment Disparity"], status: "Under Investigation" }
+    ]
+  },
+  berlin: {
+    monthlyIntakeVol: 4,
+    postInvestigationSatisfaction: 90,
+    reopenedCaseRate: 2.9,
+    caseTypeWeights: { "Harassment": 0.16, "Compensation": 0.16, "Financial Fraud": 0.10, "Treatment Disparity": 0.12, "Facilities": 0.18, "Real Estate": 0.14, "Other": 0.14 },
+    divisionMix: [
+      { division: "Engineering & Technology", cases: 10 },
+      { division: "Operations & Supply Chain", cases: 4 },
+      { division: "Finance & Corporate", cases: 3 },
+      { division: "Sales & Marketing", cases: 2 }
+    ],
+    repeatOffenders: [
+      { ref: "OPS-0198", casesCount: 2, categories: ["Facilities"], status: "Resolved" }
+    ]
+  },
+  dubai: {
+    monthlyIntakeVol: 3,
+    postInvestigationSatisfaction: 82,
+    reopenedCaseRate: 6.0,
+    caseTypeWeights: { "Harassment": 0.22, "Compensation": 0.24, "Financial Fraud": 0.14, "Treatment Disparity": 0.14, "Facilities": 0.08, "Real Estate": 0.10, "Other": 0.08 },
+    divisionMix: [
+      { division: "Sales & Marketing", cases: 7 },
+      { division: "Finance & Corporate", cases: 4 },
+      { division: "Customer Success & Support", cases: 2 },
+      { division: "Operations & Supply Chain", cases: 2 }
+    ],
+    repeatOffenders: [
+      { ref: "MGR-0350", casesCount: 2, categories: ["Compensation", "Harassment"], status: "Under Investigation" }
+    ]
+  },
+  blr: {
+    monthlyIntakeVol: 6,
+    postInvestigationSatisfaction: 93,
+    reopenedCaseRate: 1.8,
+    caseTypeWeights: { "Harassment": 0.14, "Compensation": 0.18, "Financial Fraud": 0.08, "Treatment Disparity": 0.14, "Facilities": 0.16, "Real Estate": 0.08, "Other": 0.22 },
+    divisionMix: [
+      { division: "Engineering & Technology", cases: 16 },
+      { division: "Customer Success & Support", cases: 8 },
+      { division: "Operations & Supply Chain", cases: 6 },
+      { division: "Sales & Marketing", cases: 4 }
+    ],
+    repeatOffenders: [
+      { ref: "LEAD-0602", casesCount: 2, categories: ["Treatment Disparity"], status: "Resolved" }
+    ]
+  },
+  sgp: {
+    monthlyIntakeVol: 4,
+    postInvestigationSatisfaction: 89,
+    reopenedCaseRate: 3.2,
+    caseTypeWeights: { "Harassment": 0.16, "Compensation": 0.20, "Financial Fraud": 0.12, "Treatment Disparity": 0.16, "Facilities": 0.10, "Real Estate": 0.10, "Other": 0.16 },
+    divisionMix: [
+      { division: "Sales & Marketing", cases: 11 },
+      { division: "Customer Success & Support", cases: 6 },
+      { division: "Finance & Corporate", cases: 5 },
+      { division: "Engineering & Technology", cases: 3 }
+    ],
+    repeatOffenders: [
+      { ref: "SUP-0284", casesCount: 2, categories: ["Compensation"], status: "Under Investigation" }
+    ]
+  },
+  sp: {
+    monthlyIntakeVol: 5,
+    postInvestigationSatisfaction: 85,
+    reopenedCaseRate: 4.6,
+    caseTypeWeights: { "Harassment": 0.16, "Compensation": 0.14, "Financial Fraud": 0.18, "Treatment Disparity": 0.10, "Facilities": 0.14, "Real Estate": 0.14, "Other": 0.14 },
+    divisionMix: [
+      { division: "Operations & Supply Chain", cases: 12 },
+      { division: "Sales & Marketing", cases: 6 },
+      { division: "Finance & Corporate", cases: 5 },
+      { division: "Customer Success & Support", cases: 3 }
+    ],
+    repeatOffenders: [
+      { ref: "OPS-0417", casesCount: 3, categories: ["Financial Fraud", "Facilities"], status: "Escalated" }
+    ]
+  }
+};
+
+// Gender & Corporate Title distribution tendencies per case type (org-wide patterns, applied to any site's case-type counts)
+const GENDER_WEIGHTS_BY_TYPE = {
+  "Harassment": { "Male": 0.28, "Female": 0.65, "Other": 0.07 },
+  "Compensation": { "Male": 0.42, "Female": 0.52, "Other": 0.06 },
+  "Financial Fraud": { "Male": 0.55, "Female": 0.40, "Other": 0.05 },
+  "Treatment Disparity": { "Male": 0.30, "Female": 0.63, "Other": 0.07 },
+  "Facilities": { "Male": 0.48, "Female": 0.46, "Other": 0.06 },
+  "Real Estate": { "Male": 0.50, "Female": 0.44, "Other": 0.06 },
+  "Other": { "Male": 0.45, "Female": 0.48, "Other": 0.07 }
+};
+
+const TITLE_WEIGHTS_BY_TYPE = {
+  "Harassment": { "Individual Contributor": 0.35, "People Manager": 0.40, "Director": 0.18, "VP & Above": 0.07 },
+  "Compensation": { "Individual Contributor": 0.50, "People Manager": 0.32, "Director": 0.13, "VP & Above": 0.05 },
+  "Financial Fraud": { "Individual Contributor": 0.40, "People Manager": 0.30, "Director": 0.20, "VP & Above": 0.10 },
+  "Treatment Disparity": { "Individual Contributor": 0.45, "People Manager": 0.35, "Director": 0.15, "VP & Above": 0.05 },
+  "Facilities": { "Individual Contributor": 0.60, "People Manager": 0.28, "Director": 0.09, "VP & Above": 0.03 },
+  "Real Estate": { "Individual Contributor": 0.55, "People Manager": 0.30, "Director": 0.11, "VP & Above": 0.04 },
+  "Other": { "Individual Contributor": 0.50, "People Manager": 0.32, "Director": 0.13, "VP & Above": 0.05 }
+};
+
+// Per-division deep-dive data, used only inside the Divisional Head Reporting Dashboard view
+const DIVISION_DETAIL_DATA = {
+  eng: {
+    monthlyIntakeVol: 8,
+    postInvestigationSatisfaction: 90,
+    reopenedCaseRate: 3.0,
+    caseTypeWeights: { "Harassment": 0.20, "Compensation": 0.18, "Financial Fraud": 0.08, "Treatment Disparity": 0.14, "Facilities": 0.16, "Real Estate": 0.10, "Other": 0.14 },
+    repeatOffenders: [
+      { ref: "LEAD-0219", casesCount: 2, categories: ["Compensation", "Treatment Disparity"], status: "Under Investigation" },
+      { ref: "MGR-0602", casesCount: 2, categories: ["Facilities"], status: "Resolved" }
+    ]
+  },
+  sales: {
+    monthlyIntakeVol: 7,
+    postInvestigationSatisfaction: 85,
+    reopenedCaseRate: 4.8,
+    caseTypeWeights: { "Harassment": 0.24, "Compensation": 0.24, "Financial Fraud": 0.10, "Treatment Disparity": 0.16, "Facilities": 0.08, "Real Estate": 0.06, "Other": 0.12 },
+    repeatOffenders: [
+      { ref: "MGR-0733", casesCount: 3, categories: ["Harassment"], status: "Escalated" },
+      { ref: "SUP-0284", casesCount: 2, categories: ["Compensation"], status: "Under Investigation" }
+    ]
+  },
+  ops: {
+    monthlyIntakeVol: 6,
+    postInvestigationSatisfaction: 88,
+    reopenedCaseRate: 3.5,
+    caseTypeWeights: { "Harassment": 0.16, "Compensation": 0.14, "Financial Fraud": 0.20, "Treatment Disparity": 0.10, "Facilities": 0.18, "Real Estate": 0.14, "Other": 0.08 },
+    repeatOffenders: [
+      { ref: "OPS-0417", casesCount: 3, categories: ["Financial Fraud", "Facilities"], status: "Escalated" }
+    ]
+  },
+  finance: {
+    monthlyIntakeVol: 5,
+    postInvestigationSatisfaction: 91,
+    reopenedCaseRate: 2.6,
+    caseTypeWeights: { "Harassment": 0.14, "Compensation": 0.20, "Financial Fraud": 0.28, "Treatment Disparity": 0.10, "Facilities": 0.08, "Real Estate": 0.08, "Other": 0.12 },
+    repeatOffenders: [
+      { ref: "MGR-1042", casesCount: 3, categories: ["Harassment", "Treatment Disparity"], status: "Under Investigation" }
+    ]
+  },
+  cs: {
+    monthlyIntakeVol: 6,
+    postInvestigationSatisfaction: 93,
+    reopenedCaseRate: 2.0,
+    caseTypeWeights: { "Harassment": 0.22, "Compensation": 0.16, "Financial Fraud": 0.06, "Treatment Disparity": 0.14, "Facilities": 0.12, "Real Estate": 0.06, "Other": 0.24 },
+    repeatOffenders: [
+      { ref: "LEAD-0602", casesCount: 2, categories: ["Treatment Disparity"], status: "Resolved" }
+    ]
+  }
+};
+
+// Investigation outcome / action taxonomy, used specifically in the Divisional Head view
+const ACTION_TYPES = ["Termination", "Written Warning", "Compensation Impact", "Promotion / Career Impact", "Coaching / No Formal Action"];
+
+const ACTION_WEIGHTS_BY_TYPE = {
+  "Harassment": { "Termination": 0.22, "Written Warning": 0.38, "Compensation Impact": 0.08, "Promotion / Career Impact": 0.12, "Coaching / No Formal Action": 0.20 },
+  "Compensation": { "Termination": 0.05, "Written Warning": 0.15, "Compensation Impact": 0.45, "Promotion / Career Impact": 0.10, "Coaching / No Formal Action": 0.25 },
+  "Financial Fraud": { "Termination": 0.40, "Written Warning": 0.20, "Compensation Impact": 0.10, "Promotion / Career Impact": 0.05, "Coaching / No Formal Action": 0.25 },
+  "Treatment Disparity": { "Termination": 0.10, "Written Warning": 0.25, "Compensation Impact": 0.20, "Promotion / Career Impact": 0.20, "Coaching / No Formal Action": 0.25 },
+  "Facilities": { "Termination": 0.02, "Written Warning": 0.10, "Compensation Impact": 0.03, "Promotion / Career Impact": 0.02, "Coaching / No Formal Action": 0.83 },
+  "Real Estate": { "Termination": 0.05, "Written Warning": 0.15, "Compensation Impact": 0.10, "Promotion / Career Impact": 0.05, "Coaching / No Formal Action": 0.65 },
+  "Other": { "Termination": 0.10, "Written Warning": 0.20, "Compensation Impact": 0.15, "Promotion / Career Impact": 0.10, "Coaching / No Formal Action": 0.45 }
+};
+
+// Per-region deep-dive data, used only inside the Regional Head Reporting Dashboard view
+const REGION_DETAIL_DATA = {
+  na: {
+    monthlyIntakeVol: 11,
+    postInvestigationSatisfaction: 89,
+    reopenedCaseRate: 3.8,
+    caseTypeWeights: { "Harassment": 0.22, "Compensation": 0.20, "Financial Fraud": 0.10, "Treatment Disparity": 0.14, "Facilities": 0.12, "Real Estate": 0.10, "Other": 0.12 },
+    repeatOffenders: [
+      { ref: "MGR-1042", casesCount: 3, categories: ["Harassment", "Treatment Disparity"], status: "Under Investigation" },
+      { ref: "LEAD-0219", casesCount: 2, categories: ["Compensation"], status: "Resolved" }
+    ]
+  },
+  emea: {
+    monthlyIntakeVol: 10,
+    postInvestigationSatisfaction: 85,
+    reopenedCaseRate: 4.6,
+    caseTypeWeights: { "Harassment": 0.26, "Compensation": 0.16, "Financial Fraud": 0.12, "Treatment Disparity": 0.16, "Facilities": 0.10, "Real Estate": 0.08, "Other": 0.12 },
+    repeatOffenders: [
+      { ref: "MGR-0733", casesCount: 3, categories: ["Harassment"], status: "Escalated" },
+      { ref: "OPS-0198", casesCount: 2, categories: ["Facilities"], status: "Resolved" }
+    ]
+  },
+  apac: {
+    monthlyIntakeVol: 9,
+    postInvestigationSatisfaction: 92,
+    reopenedCaseRate: 2.6,
+    caseTypeWeights: { "Harassment": 0.16, "Compensation": 0.18, "Financial Fraud": 0.08, "Treatment Disparity": 0.14, "Facilities": 0.16, "Real Estate": 0.10, "Other": 0.18 },
+    repeatOffenders: [
+      { ref: "LEAD-0602", casesCount: 2, categories: ["Treatment Disparity"], status: "Resolved" },
+      { ref: "SUP-0284", casesCount: 2, categories: ["Compensation"], status: "Under Investigation" }
+    ]
+  },
+  latam: {
+    monthlyIntakeVol: 4,
+    postInvestigationSatisfaction: 86,
+    reopenedCaseRate: 5.0,
+    caseTypeWeights: { "Harassment": 0.16, "Compensation": 0.14, "Financial Fraud": 0.18, "Treatment Disparity": 0.10, "Facilities": 0.14, "Real Estate": 0.14, "Other": 0.14 },
+    repeatOffenders: [
+      { ref: "OPS-0417", casesCount: 3, categories: ["Financial Fraud", "Facilities"], status: "Escalated" }
+    ]
+  }
+};
+
+// Offender tenure & age group cohort tendency per case type
+const TENURE_AGE_WEIGHTS_BY_TYPE = {
+  "Harassment": { "New Hire (<1 Yr / Under 30)": 0.20, "Early Career (1-3 Yrs / 30-40)": 0.32, "Established (3-7 Yrs / 40-50)": 0.30, "Tenured (7+ Yrs / 50+)": 0.18 },
+  "Compensation": { "New Hire (<1 Yr / Under 30)": 0.10, "Early Career (1-3 Yrs / 30-40)": 0.25, "Established (3-7 Yrs / 40-50)": 0.35, "Tenured (7+ Yrs / 50+)": 0.30 },
+  "Financial Fraud": { "New Hire (<1 Yr / Under 30)": 0.08, "Early Career (1-3 Yrs / 30-40)": 0.20, "Established (3-7 Yrs / 40-50)": 0.32, "Tenured (7+ Yrs / 50+)": 0.40 },
+  "Treatment Disparity": { "New Hire (<1 Yr / Under 30)": 0.22, "Early Career (1-3 Yrs / 30-40)": 0.34, "Established (3-7 Yrs / 40-50)": 0.28, "Tenured (7+ Yrs / 50+)": 0.16 },
+  "Facilities": { "New Hire (<1 Yr / Under 30)": 0.25, "Early Career (1-3 Yrs / 30-40)": 0.28, "Established (3-7 Yrs / 40-50)": 0.27, "Tenured (7+ Yrs / 50+)": 0.20 },
+  "Real Estate": { "New Hire (<1 Yr / Under 30)": 0.20, "Early Career (1-3 Yrs / 30-40)": 0.27, "Established (3-7 Yrs / 40-50)": 0.30, "Tenured (7+ Yrs / 50+)": 0.23 },
+  "Other": { "New Hire (<1 Yr / Under 30)": 0.20, "Early Career (1-3 Yrs / 30-40)": 0.28, "Established (3-7 Yrs / 40-50)": 0.30, "Tenured (7+ Yrs / 50+)": 0.22 }
+};
+
+// Named direct reports of each Regional Head — modeled as the Site Directors of the sites within that region
+const REGION_DIRECT_REPORTS = {
+  nyc: { name: "Michael Chen", title: "Site Director, New York HQ" },
+  sf: { name: "Priya Patel", title: "Site Director, San Francisco Tech Hub" },
+  london: { name: "James Whitfield", title: "Site Director, London Office" },
+  berlin: { name: "Anna Fischer", title: "Site Director, Berlin R&D Center" },
+  dubai: { name: "Fatima Al-Sayed", title: "Site Director, Dubai Regional Office" },
+  blr: { name: "Arjun Mehta", title: "Site Director, Bangalore Tech Park" },
+  sgp: { name: "Wei Ling Tan", title: "Site Director, Singapore Hub" },
+  sp: { name: "Carlos Mendes", title: "Site Director, São Paulo Office" }
+};
+
+// Org-wide case ageing distribution buckets, used in the HR Head view
+const HR_AGE_BUCKETS = [
+  { bucket: "0-7 Days", count: 120 },
+  { bucket: "8-14 Days", count: 58 },
+  { bucket: "15-30 Days", count: 26 },
+  { bucket: "30+ Days", count: 10 }
+];
+
+// Org-wide monthly intake vs. closure trend, used in the HR Head view
+const HR_MONTHLY_TREND = {
+  months: ["Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+  newCases: [28, 31, 29, 35, 38, 34],
+  closedCases: [24, 27, 30, 32, 35, 36]
+};
+
+// Org-wide intake channel split, used in the HR Head view
+const INTAKE_CHANNEL_SPLIT = [
+  { channel: "AI Chatbot / Web Portal", pct: 52, color: "#1F7A8C" },
+  { channel: "Confidential Hotline", pct: 28, color: "#C6A15B" },
+  { channel: "Open-Door / In-Person", pct: 20, color: "#8ECDF0" }
+];
+
+window.HR_AGE_BUCKETS = HR_AGE_BUCKETS;
+window.HR_MONTHLY_TREND = HR_MONTHLY_TREND;
+window.INTAKE_CHANNEL_SPLIT = INTAKE_CHANNEL_SPLIT;
+window.REGION_DIRECT_REPORTS = REGION_DIRECT_REPORTS;
+
+window.POLICIES_DATA = POLICIES_DATA;
+window.LEARNING_MODULES = LEARNING_MODULES;
+window.CATEGORIES_LIST = CATEGORIES_LIST;
+window.CATEGORY_QUESTIONS = CATEGORY_QUESTIONS;
+window.INITIAL_SAMPLE_CASES = INITIAL_SAMPLE_CASES;
+window.REPORTING_DATA = REPORTING_DATA;
+window.CASE_TYPES = CASE_TYPES;
+window.BASE_AGEING_DAYS = BASE_AGEING_DAYS;
+window.SITE_DETAIL_DATA = SITE_DETAIL_DATA;
+window.GENDER_WEIGHTS_BY_TYPE = GENDER_WEIGHTS_BY_TYPE;
+window.TITLE_WEIGHTS_BY_TYPE = TITLE_WEIGHTS_BY_TYPE;
+window.DIVISION_DETAIL_DATA = DIVISION_DETAIL_DATA;
+window.ACTION_TYPES = ACTION_TYPES;
+window.ACTION_WEIGHTS_BY_TYPE = ACTION_WEIGHTS_BY_TYPE;
+window.REGION_DETAIL_DATA = REGION_DETAIL_DATA;
+window.TENURE_AGE_WEIGHTS_BY_TYPE = TENURE_AGE_WEIGHTS_BY_TYPE;
 

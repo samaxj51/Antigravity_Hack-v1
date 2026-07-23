@@ -123,7 +123,7 @@ const DashboardModule = {
     points.forEach((val, idx) => {
       const x = 40 + idx * stepX;
       const y = height - 30 - (val / maxY) * (height - 50);
-      
+
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fillStyle = "#8ECDF0";
@@ -175,7 +175,7 @@ const DashboardModule = {
     slices.forEach(slice => {
       ctx.fillStyle = slice.color;
       ctx.fillRect(width / 1.7, legendY, 12, 12);
-      
+
       ctx.fillStyle = "gray";
       ctx.font = "11px 'Plus Jakarta Sans'";
       ctx.fillText(`${slice.label} (${slice.value}%)`, width / 1.7 + 20, legendY + 10);

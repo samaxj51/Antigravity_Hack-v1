@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>listen360 | Psychological Safety & Employee Wellbeing Companion</title>
+  <meta name="description" content="listen360: Every Voice Matters. Every Concern Deserves to Be Heard. A safe, confidential AI-powered platform for reporting concerns and accessing wellbeing resources.">
+  <script type="module" crossorigin src="/assets/index-CnxtkSyt.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CMQgIjex.css">
+</head>
+<body>
+
+  <!-- FLOATING ACCENT DECORATIONS -->
+  <div class="floating-bg-accent bg-blob-1" aria-hidden="true"></div>
+  <div class="floating-bg-accent bg-blob-2" aria-hidden="true"></div>
+
+  <!-- APP HEADER -->
+  <header class="app-header" role="banner">
+    <div class="brand-container" onclick="App.switchRole('employee')" tabindex="0" role="button" aria-label="listen360 Home">
+      <!-- Minimalist Vector Logo -->
+      <svg class="brand-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1F7A8C" />
+            <stop offset="100%" stop-color="#155461" />
+          </linearGradient>
+          <linearGradient id="sageGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A8D5BA" />
+            <stop offset="100%" stop-color="#8ECDF0" />
+          </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="44" stroke="url(#tealGrad)" stroke-width="7" stroke-dasharray="210 50" stroke-linecap="round" />
+        <path d="M 50 12 C 70 12 86 26 86 45 C 86 58 76 69 62 74 C 58 78 50 86 42 86 C 45 80 47 75 47 73 C 28 71 14 58 14 45 C 14 26 30 12 50 12 Z" fill="url(#sageGrad)" opacity="0.4" />
+        <circle cx="40" cy="40" r="7" fill="#1F7A8C" />
+        <path d="M 28 62 C 28 50 52 50 52 62" stroke="#1F7A8C" stroke-width="5" stroke-linecap="round" />
+        <circle cx="60" cy="38" r="7" fill="#8ECDF0" />
+        <path d="M 48 60 C 48 48 72 48 72 60" stroke="#8ECDF0" stroke-width="5" stroke-linecap="round" />
+      </svg>
+      <div class="brand-text-box">
+        <div class="brand-title">
+          lis<span class="highlight-ten">ten</span>360
+        </div>
+        <div class="brand-tagline">"Every Voice Matters. Every Concern Deserves to Be Heard."</div>
+      </div>
+    </div>
+
+    <nav aria-label="Main Navigation">
+      <ul class="nav-links" role="menubar">
+        <li class="nav-link active" role="menuitem" tabindex="0" onclick="App.switchRole('employee')">🏠 Home</li>
+        <li class="nav-link" role="menuitem" tabindex="0" onclick="App.openPolicyModal('speak-up')">📜 Policy Corner</li>
+        <li class="nav-link" role="menuitem" tabindex="0" onclick="WellbeingModule.openMHFAConnectModal()">🤝 Mental Health & Support</li>
+        <li class="nav-link" role="menuitem" tabindex="0" onclick="ChatEngine.promptCaseTracking()">🔎 Track My Report</li>
+      </ul>
+    </nav>
+
+    <div class="header-right">
+      <!-- Dark / Light Mode Switcher -->
+      <button class="theme-toggle-btn" onclick="App.toggleTheme()" aria-label="Toggle Light and Dark Mode" title="Toggle Theme">
+        🌙
+      </button>
+
+      <div class="role-switcher" role="radiogroup" aria-label="Portal Mode">
+        <button id="roleBtnEmployee" class="role-btn active" role="radio" aria-checked="true" onclick="App.switchRole('employee')">
+          👤 Employee View
+        </button>
+        <button id="roleBtnInvestigator" class="role-btn" role="radio" aria-checked="false" onclick="App.switchRole('investigator')">
+          🛡️ Investigator Portal
+        </button>
+      </div>
+
+      <div class="user-profile-badge" tabindex="0" role="button" aria-label="User Profile">
+        <div class="user-avatar">JS</div>
+        <span style="font-size:0.78rem; font-weight:700;">Jordan Smith</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN VIEW CONTAINER -->
+  <main class="main-view" role="main">
+
+    <!-- PART A & B: EMPLOYEE 50/50 SPLIT VIEW -->
+    <div id="employeeView" class="employee-container" role="region" aria-label="Employee Dashboard and Chat">
+      
+      <!-- LEFT PANEL (50%) - RESOURCES & INSIGHTS (WELLBEING DASHBOARD) -->
+      <section class="left-dashboard-panel" aria-label="Resources & Insights Dashboard">
+        
+        <div class="panel-section-title-badge">
+          📊 Resources & Insights — Employee Wellbeing Dashboard
+        </div>
+
+        <!-- WELCOME SECTION -->
+        <div class="welcome-card">
+          <h1 class="welcome-title">Welcome to lis<span class="highlight-ten">ten</span>360</h1>
+          <p class="welcome-desc">
+            "A safe space where every concern is heard with empathy and confidentiality."
+          </p>
+        </div>
+
+        <!-- 3 ANIMATED METRICS CARDS -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon-box safety" aria-hidden="true">🛡️</div>
+            <div id="metricValSafety" class="metric-value">96.4%</div>
+            <div class="metric-label">Psychological Safety Score</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-box time" aria-hidden="true">⚡</div>
+            <div id="metricValTime" class="metric-value">3.8 Days</div>
+            <div class="metric-label">Average Resolution Time</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-box programs" aria-hidden="true">🌿</div>
+            <div id="metricValPrograms" class="metric-value">14</div>
+            <div class="metric-label">Active Wellbeing Programs</div>
+          </div>
+        </div>
+
+        <!-- POLICY DOCUMENTS SECTION -->
+        <div>
+          <div class="section-header">
+            <h2 class="section-title">📜 Policy Documents</h2>
+            <span style="font-size:0.72rem; color:var(--text-muted);">Updated 2026</span>
+          </div>
+          <div id="policiesGrid" class="policies-grid">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+
+        <!-- LEARNING & WELLBEING SECTION -->
+        <div>
+          <div class="section-header">
+            <h2 class="section-title">🧠 Learning & Wellbeing</h2>
+            <span style="font-size:0.72rem; color:var(--primary-teal); font-weight:700; cursor:pointer;" onclick="WellbeingModule.triggerPathway()">Explore Support</span>
+          </div>
+          <div id="learningGrid" class="learning-grid">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT PANEL (50%) - PREMIUM EMPATHETIC AI CHAT PANEL -->
+      <section class="right-chat-panel" aria-label="AI Psychological Safety Companion Chat Window">
+        
+        <div class="chat-header">
+          <div class="chat-bot-info">
+            <div class="chat-companion-avatar" aria-hidden="true">
+              <svg class="chat-companion-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" fill="none" />
+                <ellipse cx="36" cy="42" rx="5" ry="6" fill="#FFFFFF" />
+                <ellipse cx="64" cy="42" rx="5" ry="6" fill="#FFFFFF" />
+                <circle cx="37" cy="40" r="2" fill="#1F7A8C" />
+                <circle cx="65" cy="40" r="2" fill="#1F7A8C" />
+                <path d="M 32 60 C 40 74 60 74 68 60" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none" />
+                <circle cx="26" cy="52" r="5" fill="#FFAAA5" opacity="0.6" />
+                <circle cx="74" cy="52" r="5" fill="#FFAAA5" opacity="0.6" />
+              </svg>
+              <div class="online-dot"></div>
+            </div>
+            <div>
+              <div class="chat-bot-name">listen360 AI Companion</div>
+              <div class="chat-bot-status">● Empathetic & Active Listener</div>
+            </div>
+          </div>
+
+          <div class="confidential-shield-tag">
+            🔒 256-Bit Encrypted • Confidential & Secure
+          </div>
+        </div>
+
+        <!-- Live Voice Recording Banner Indicator -->
+        <div id="voiceStatusBox" class="voice-status-banner" style="display:none;" onclick="ChatEngine.toggleVoiceRecording()">
+          <!-- Populated by chat.js -->
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div id="chatMessages" class="chat-messages-container" role="log" aria-live="polite" aria-label="Chat Conversation">
+          <!-- Rendered dynamically by chat.js -->
+        </div>
+
+        <!-- Chat Input Footer Bar with Text, Voice, & Attachment Controls -->
+        <div class="chat-footer">
+          <button id="attachmentBtn" class="chat-tool-btn" title="Attach Document/Image" aria-label="Attach Document" onclick="ChatEngine.triggerFileUpload()">
+            📎
+          </button>
+
+          <button id="voiceRecordBtn" class="chat-tool-btn" title="Voice Recording Mode" aria-label="Toggle Voice Recording" onclick="ChatEngine.toggleVoiceRecording()">
+            🎙️
+          </button>
+
+          <input id="chatInput" type="text" class="chat-input" placeholder="Type or record your concern in your own words..." aria-label="Message Input" />
+          
+          <button class="send-btn" onclick="App.sendMessage()" title="Send Message" aria-label="Send Message">➤</button>
+        </div>
+
+      </section>
+
+    </div>
+
+
+    <!-- PART C: INVESTIGATOR & CASE MANAGER PORTAL -->
+    <div id="investigatorView" class="investigator-container" style="display: none;" role="region" aria-label="Investigator Portal">
+      
+      <div class="investigator-top-header">
+        <div>
+          <h1 class="inv-title">Case Intelligence & Analytics Dashboard</h1>
+          <p class="inv-subtitle">Real-time overview of reported workplace concerns, risk distributions, and case routing.</p>
+        </div>
+        <button class="action-btn-sm" style="padding:6px 14px; font-size:0.76rem;" onclick="DashboardModule.renderMetrics()">🔄 Refresh Live Feeds</button>
+      </div>
+
+      <!-- Top Executive Metrics Grid -->
+      <div id="invMetricsGrid" class="inv-metrics-grid">
+        <!-- Rendered dynamically by dashboard.js -->
+      </div>
+
+      <!-- AI Case Intelligence Assistant Panel -->
+      <div class="ai-intelligence-card">
+        <div class="ai-intel-header">
+          <div class="ai-intel-icon" aria-hidden="true">🤖</div>
+          <div>
+            <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-main);">AI Case Intelligence Assistant</h3>
+            <span style="font-size:0.72rem; color:var(--primary-teal); font-weight:600;">Ask natural language questions about overall case trends and risk analysis</span>
+          </div>
+        </div>
+
+        <div class="ai-prompts-chips">
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Give me a summary of cases received this month.')">
+            💬 "Summary of cases received this month"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('What are the top 3 emerging concerns?')">
+            💬 "Top 3 emerging concerns"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Show me cases related to manager behaviour.')">
+            💬 "Manager behaviour cases"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Which categories have increased the most this quarter?')">
+            💬 "Quarterly category increases"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Summarise all high-risk cases.')">
+            💬 "Summarise high-risk cases"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Which cases are approaching SLA breach?')">
+            💬 "Cases approaching SLA breach"
+          </div>
+        </div>
+
+        <div class="ai-query-bar">
+          <input id="aiIntelInput" type="text" class="ai-query-input" placeholder="Type a question for AI case insights..." aria-label="AI Query Input" onkeypress="if(event.key==='Enter') AiIntelligence.processQuery(this.value)" />
+          <button class="action-btn-sm" style="padding:0 14px;" onclick="AiIntelligence.processQuery(document.getElementById('aiIntelInput').value)">Ask AI</button>
+        </div>
+
+        <div id="aiIntelResponseBox" class="ai-response-box"></div>
+      </div>
+
+      <!-- Visual Analytics Grid -->
+      <div class="analytics-grid">
+        <div class="chart-card">
+          <div class="chart-card-title">
+            <span>📈 Case Volume Trend Over Time</span>
+            <span style="font-size:0.7rem; color:var(--text-muted);">2026 YTD</span>
+          </div>
+          <div class="chart-canvas-box">
+            <canvas id="volumeChartCanvas" aria-label="Case Volume Chart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-title">
+            <span>🍩 Category Distribution</span>
+            <span style="font-size:0.7rem; color:var(--text-muted);">All Active Records</span>
+          </div>
+          <div class="chart-canvas-box">
+            <canvas id="categoryChartCanvas" aria-label="Category Distribution Chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filterable Cases Table -->
+      <div class="table-card">
+        <div class="table-filters-bar">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-main);">Active Case Repository</h3>
+            <div class="search-input-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" placeholder="Search case ID, keyword..." aria-label="Search Cases" onkeyup="DashboardModule.handleSearch(this.value)" />
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px;">
+            <select class="filter-select" aria-label="Filter by Category" onchange="DashboardModule.filterCategory(this.value)">
+              <option value="all">All Categories</option>
+              <option value="Bullying">Bullying / Harassment</option>
+              <option value="Ethics">Ethics / Conduct</option>
+              <option value="Well-being">Well-being / Mental Health</option>
+              <option value="Retaliation">Retaliation</option>
+              <option value="Workplace Behaviour">Workplace Behaviour</option>
+            </select>
+
+            <select class="filter-select" aria-label="Filter by Risk" onchange="DashboardModule.filterRisk(this.value)">
+              <option value="all">All Risk Levels</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="moderate">Moderate</option>
+              <option value="low">Low</option>
+            </select>
+
+            <select class="filter-select" aria-label="Filter by Status" onchange="DashboardModule.filterStatus(this.value)">
+              <option value="all">All Statuses</option>
+              <option value="submitted">Submitted</option>
+              <option value="under initial review">Under Initial Review</option>
+              <option value="under investigation">Under Investigation</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <table class="cases-table" aria-label="Cases List">
+          <thead>
+            <tr>
+              <th>Case ID</th>
+              <th>Category</th>
+              <th>Risk Level</th>
+              <th>Age</th>
+              <th>Status</th>
+              <th>Assigned Owner</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="casesTableBody">
+            <!-- Rendered dynamically by dashboard.js -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- GENERAL MODAL CONTAINER -->
+  <div id="generalModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div id="modalInnerContent" class="modal-content">
+      <!-- Modal contents injected dynamically -->
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LIBRARIES & MODULES -->
+</body>
+</html>
+

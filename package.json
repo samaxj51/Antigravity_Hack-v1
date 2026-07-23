@@ -1,13 +1,15 @@
 {
   "name": "listen360",
   "version": "1.0.0",
-  "description": "Psychological Safety & Employee Wellbeing Companion",
+  "description": "listen360 - Psychological Safety & Employee Wellbeing Companion",
   "main": "index.html",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
+  "dependencies": {},
   "devDependencies": {
     "vite": "^5.0.0"
   }

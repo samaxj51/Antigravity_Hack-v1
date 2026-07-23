@@ -32,9 +32,9 @@ const App = {
     };
 
     setTimeout(() => {
-      animateVal("metricValSafety", 0, 96.4, 1400, "%");
-      animateVal("metricValTime", 0, 3.8, 1000, " Days");
       animateVal("metricValPrograms", 0, 14, 800, " Programs");
+      animateVal("metricValConfidential", 0, 100, 1000, "%");
+      animateVal("metricValContacts", 0, 12, 1200, " On-Call");
     }, 200);
   },
 

@@ -421,9 +421,9 @@ nav {
   font-size: 1rem;
 }
 
-.metric-icon-box.safety { background: rgba(45, 106, 79, 0.12); color: var(--color-success); }
-.metric-icon-box.time { background: rgba(217, 119, 6, 0.12); color: var(--color-warning); }
 .metric-icon-box.programs { background: rgba(168, 213, 186, 0.25); color: var(--primary-teal); }
+.metric-icon-box.confidential { background: rgba(31, 122, 140, 0.12); color: var(--primary-teal); }
+.metric-icon-box.mhfa { background: rgba(142, 205, 240, 0.25); color: var(--primary-teal-dark); }
 
 .metric-value {
   font-family: var(--font-heading);

@@ -574,21 +574,30 @@ const ChatEngine = {
 
   generateAICaseSummary() {
     const cd = this.chatData;
+    const isBias = this.mode === "biasness" || (cd.category && cd.category.toLowerCase().includes("bias"));
     
     // Primary Concern
-    const primaryConcern = cd.description || "Workplace stress and emotional wellbeing factors related to workload and environment.";
+    const primaryConcern = cd.description || (isBias 
+      ? "Workplace biasness, favouritism, or unfair treatment concern." 
+      : "Workplace stress and emotional wellbeing factors affecting day-to-day work.");
     
-    // Emotional State
-    const emotionalState = cd.experiencing || cd.dailyImpact || "Feeling overwhelmed, anxious, or emotionally strained.";
+    // Emotional State / Context
+    const emotionalState = cd.experiencing || cd.context || (isBias
+      ? "Observed differential treatment and potential exclusion in workplace decisions."
+      : "Feeling overwhelmed, anxious, emotionally strained, or seeking support.");
     
     // Incident / Contributing Factors
-    const incidentSummary = cd.workloadContributing || cd.context || cd.triggers || cd.description || "Workplace situation described during intake assessment.";
+    const incidentSummary = cd.workloadContributing || cd.differentialTreatment || cd.triggers || cd.context || (isBias
+      ? "Differential treatment observed involving authority figures or peer group interactions."
+      : "Workplace pressures, workload expectations, or environmental factors contributed.");
     
     // Impact
-    const impact = cd.dailyImpact || cd.experiencing || "Affecting daily concentration, productivity, energy, or work performance.";
+    const impact = cd.dailyImpact || cd.futureCareerImpact || (isBias
+      ? "Affecting career advancement, team visibility, morale, or daily participation."
+      : "Difficulty concentrating, sleep disruption, reduced motivation, or emotional strain.");
     
     // Support Requested
-    const supportRequested = cd.desiredSupport || cd.differentialTreatment || "Confidential Ombudsperson review & support requested.";
+    const supportRequested = cd.desiredSupport || cd.stereotypesObserved || "Confidential Independent Ombudsperson review & support requested.";
     
     // Severity assessment
     let severity = "Medium";
@@ -599,7 +608,9 @@ const ChatEngine = {
     }
 
     // AI Overall Summary Text (Dynamically built from user's actual answers)
-    const overallSummary = `User reported primary concern regarding "${primaryConcern}", causing impact on "${impact}". Contributing factors noted: "${incidentSummary}". Desired support: "${supportRequested}". Recommended for confidential Ombudsperson review.`;
+    const overallSummary = isBias
+      ? `User submitted a confidential report regarding biasness/favouritism: "${primaryConcern}". Impact noted: "${impact}". Context: "${incidentSummary}". Recommended for Independent Ombudsperson review.`
+      : `User submitted a confidential report regarding workplace wellbeing: "${primaryConcern}". Impact noted: "${impact}". Contributing factors: "${incidentSummary}". Recommended for confidential Ombudsperson review.`;
 
     return {
       primaryConcern,

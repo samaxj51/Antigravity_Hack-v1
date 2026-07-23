@@ -326,34 +326,58 @@ const ChatEngine = {
       }, 1200);
 
     } else {
-      // SAFE PATHWAY
+      // SAFE PATHWAY: RENDER PRE-SUBMISSION SUMMARY PREVIEW
       this.chatData.isSafe = true;
-      this.showTypingIndicator();
+      this.renderPreSubmissionSummaryPreview();
+    }
+  },
 
-      setTimeout(() => {
-        this.hideTypingIndicator();
-        this.addAiMessage(`
-          <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:10px; padding:14px; margin-top:6px;">
-            <h4 style="color:var(--primary-teal); font-size:0.95rem;">🌿 Well-being Assessment & Support Plan</h4>
-            <p style="margin-top:6px; font-size:0.8rem; line-height:1.45;">
-              Thank you for completing the mental health evaluation. Based on your responses, we have created two personalized options for you:
-            </p>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-              <div style="background:rgba(168, 213, 186, 0.2); border:1px solid var(--border-color); padding:10px; border-radius:8px;">
-                <strong style="color:var(--primary-teal-dark); font-size:0.8rem;">Path A: Support & Care</strong>
-                <p style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">Connect with MHFA, book counselling, or access self-help tools.</p>
-                <button class="policy-btn" style="margin-top:6px;" onclick="WellbeingModule.openMHFAConnectModal()">Access Support</button>
-              </div>
-              <div style="background:rgba(31, 122, 140, 0.06); border:1px solid var(--border-accent); padding:10px; border-radius:8px;">
-                <strong style="color:var(--primary-teal); font-size:0.8rem;">Path B: Formal Reporting</strong>
-                <p style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">Submit confidential report to Ombudsperson regarding workplace factors.</p>
-                <button class="policy-btn" style="margin-top:6px;" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
-              </div>
+  renderPreSubmissionSummaryPreview() {
+    this.showTypingIndicator();
+
+    setTimeout(() => {
+      this.hideTypingIndicator();
+      const aiSummary = this.generateAICaseSummary();
+
+      this.addAiMessage(`
+        <div class="pre-summary-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.2rem;">📝</span>
+              <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Review AI Case Summary Before Submission</h4>
+            </div>
+            <span style="background:rgba(31, 122, 140, 0.1); color:var(--primary-teal-dark); border:1px solid var(--border-accent); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
+              Preview Mode
+            </span>
+          </div>
+
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:8px;">
+            Here is the summary compiled from your 5 answers. Review and edit before generating your formal confidential ticket:
+          </p>
+
+          <div style="margin-top:10px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px; font-size:0.78rem; color:var(--text-main);">
+            <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Primary Concern:</strong> ${aiSummary.primaryConcern}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Impact on Work/Life:</strong> ${aiSummary.impact}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Contributing Factors:</strong> ${aiSummary.incidentSummary}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Requested Support:</strong> ${aiSummary.supportRequested}</div>
+            
+            <div style="margin-top:4px; background:var(--bg-card); padding:8px 10px; border-radius:6px; border-left:3px solid var(--primary-teal);">
+              <strong style="color:var(--primary-teal); font-size:0.72rem; display:block;">AI Synthesized Summary:</strong>
+              <p style="margin:2px 0 0 0; font-size:0.75rem; font-style:italic; color:var(--text-main);">"${aiSummary.overallSummary}"</p>
             </div>
           </div>
-        `);
-      }, 1300);
-    }
+
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px 12px; border-radius:6px; font-size:0.84rem; cursor:pointer;" onclick="ChatEngine.startFormalReportingFlow()">
+              📋 Continue with Formal Confidential Case Reporting (Generate Ticket Number)
+            </button>
+            <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="WellbeingModule.openAddDetailsModal()">
+              ✏️ Add / Edit Additional Details
+            </button>
+          </div>
+        </div>
+      `);
+    }, 1000);
   },
 
   // BIASNESS & INCLUSION STEP PROCESSOR (STREAMLINED 5-QUESTION FLOW)

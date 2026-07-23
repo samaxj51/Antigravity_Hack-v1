@@ -656,6 +656,21 @@ const ChatEngine = {
     setTimeout(() => {
       this.hideTypingIndicator();
       const currentDesc = this.chatData.description || "Based on our conversation, this is what I understand about your concern…";
+      const caseId = "LIS-" + Math.floor(100000 + Math.random() * 900000);
+
+      // Save case to CASES_DATA so it can be tracked immediately
+      const caseObj = {
+        id: caseId,
+        category: this.chatData.category || "Mental Health & Well-being",
+        risk: this.mentalHealthRiskScore >= 30 ? "high" : "moderate",
+        created: "Just Now",
+        status: "submitted",
+        owner: "Unassigned (Ombudsperson)",
+        anonymous: true,
+        summary: currentDesc,
+        impact: this.chatData.dailyImpact || "High wellbeing impact"
+      };
+      CASES_DATA.unshift(caseObj);
 
       this.addAiMessage(`
         <div class="formal-reporting-wrapper" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md);">
@@ -668,6 +683,58 @@ const ChatEngine = {
             <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.45; margin:0;">
               The information you’ve shared can be used to create a formal confidential report. You will have an opportunity to review and edit the information before submitting it.
             </p>
+          </div>
+
+          <!-- GENERATED TICKET CARD WITH RANDOM TICKET NUMBER -->
+          <div class="ticket-generated-card" style="margin-top:14px; background:var(--bg-card); border:2px solid var(--primary-teal); border-radius:12px; padding:16px; box-shadow:var(--shadow-md);">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.4rem;">🎫</span>
+                <div>
+                  <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Formal Confidential Case Ticket Generated</h4>
+                  <span style="font-size:0.72rem; color:var(--text-muted);">${this.chatData.category || "Mental Health & Wellbeing"} Support Case</span>
+                </div>
+              </div>
+              <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:3px 10px; border-radius:var(--radius-pill); font-size:0.72rem; font-weight:800;">
+                ● Active / Submitted
+              </span>
+            </div>
+
+            <div style="margin-top:10px; background:rgba(31, 122, 140, 0.05); border:1.5px dashed var(--border-accent); border-radius:8px; padding:12px; text-align:center;">
+              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; display:block;">Your Unique Ticket Number</span>
+              <div style="font-family:monospace; font-size:1.6rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px; margin-top:2px;">
+                ${caseId}
+              </div>
+              <span style="font-size:0.72rem; color:var(--primary-teal-dark); margin-top:3px; display:block;">🔒 100% Encrypted, Confidential & Trackable</span>
+            </div>
+
+            <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.76rem; color:var(--text-main);">
+              <div style="background:var(--bg-panel-left); padding:6px 8px; border-radius:6px; border:1px solid var(--border-color);">
+                <span style="color:var(--text-muted); font-weight:600; display:block;">Category:</span>
+                <strong>${this.chatData.category || "Mental Health & Wellbeing"}</strong>
+              </div>
+              <div style="background:var(--bg-panel-left); padding:6px 8px; border-radius:6px; border:1px solid var(--border-color);">
+                <span style="color:var(--text-muted); font-weight:600; display:block;">Confidentiality:</span>
+                <strong>100% Anonymous / Protected</strong>
+              </div>
+              <div style="background:var(--bg-panel-left); padding:6px 8px; border-radius:6px; border:1px solid var(--border-color);">
+                <span style="color:var(--text-muted); font-weight:600; display:block;">SLA Target:</span>
+                <strong>24 Hours Review</strong>
+              </div>
+              <div style="background:var(--bg-panel-left); padding:6px 8px; border-radius:6px; border:1px solid var(--border-color);">
+                <span style="color:var(--text-muted); font-weight:600; display:block;">Assigned To:</span>
+                <strong>Independent Ombudsperson</strong>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px;">
+              <button class="chat-opt-btn" style="flex:1; background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:9px; border-radius:8px; cursor:pointer;" onclick="ChatEngine.trackTicketById('${caseId}')">
+                🔎 Track My Report Status
+              </button>
+              <button class="chat-opt-btn" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; padding:9px 12px; text-align:center; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${caseId}')">
+                📋 Copy Ticket #
+              </button>
+            </div>
           </div>
 
           <!-- VISUAL WHAT HAPPENS NEXT STEPPER (5 STEPS) -->
@@ -729,8 +796,8 @@ const ChatEngine = {
           <div style="margin-top:18px;">
             <h4 style="font-size:0.9rem; font-weight:800; color:var(--text-main); margin-bottom:10px;">How would you like to proceed?</h4>
             <div style="display:flex; flex-direction:column; gap:8px;">
-              <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; padding:10px 16px; border-radius:8px; border:none; text-align:center; font-size:0.88rem; cursor:pointer;" onclick="ChatEngine.finalizeReport(true)">
-                🔒 Continue with Confidential Reporting
+              <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; padding:10px 16px; border-radius:8px; border:none; text-align:center; font-size:0.88rem; cursor:pointer;" onclick="ChatEngine.trackTicketById('${caseId}')">
+                🔎 Track This Ticket (${caseId})
               </button>
               <button class="chat-opt-btn" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; padding:8px 14px; text-align:center; cursor:pointer;" onclick="ChatEngine.saveDraftReport()">
                 💾 Save & Continue Later

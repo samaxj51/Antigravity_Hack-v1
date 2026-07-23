@@ -615,13 +615,13 @@ const ChatEngine = {
 
             <div style="margin-top:6px; background:var(--bg-card); padding:8px 10px; border-radius:6px; border-left:3px solid var(--primary-teal);">
               <strong style="color:var(--primary-teal); font-size:0.72rem; display:block;">AI Narrative Summary:</strong>
-              <p style="margin:2px 0 0 0; font-size:0.75rem; font-style:italic; color:var(--text-main);">"${aiSummaryNarrative}"</p>
+              <p style="margin:2px 0 0 0; font-size:0.75rem; font-style:italic; color:var(--text-main);">"${cd.narrative || aiSummaryNarrative}"</p>
             </div>
           </div>
 
           <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="WellbeingModule.openAddDetailsModal()">
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.openEditSummaryModal()">
                 ✏️ Edit Summary
               </button>
               <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.renderStructuredCaseSummary()">
@@ -639,6 +639,89 @@ const ChatEngine = {
       `);
       this.step = 12;
     }, 1200);
+  },
+
+  openEditSummaryModal() {
+    const cd = this.chatData;
+    const modal = document.getElementById("generalModal");
+    const content = document.getElementById("modalInnerContent");
+    if (!modal || !content) return;
+
+    content.innerHTML = `
+      <button class="modal-close-btn" aria-label="Close Modal" onclick="WellbeingModule.closeModal()">✕</button>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.8rem;">✏️</span>
+        <div>
+          <h3 class="modal-title" style="margin:0;">Edit AI Case Summary</h3>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Modify any field below to update your case summary before final submission.</span>
+        </div>
+      </div>
+
+      <form onsubmit="event.preventDefault(); ChatEngine.saveEditedSummary();" style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
+        <div>
+          <label style="font-size:0.76rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Concern Category:</label>
+          <select id="editSummaryCategory" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-panel-left); color:var(--text-main); font-size:0.84rem;">
+            ${this.allCategories.map(cat => `<option value="${cat}" ${cd.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+          </select>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label style="font-size:0.76rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Date / Period:</label>
+            <input type="text" id="editSummaryWhen" value="${cd.when || 'Recent / Ongoing'}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-panel-left); color:var(--text-main); font-size:0.84rem;" />
+          </div>
+          <div>
+            <label style="font-size:0.76rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Individuals Involved:</label>
+            <input type="text" id="editSummaryWho" value="${cd.who || 'Manager & Colleague'}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-panel-left); color:var(--text-main); font-size:0.84rem;" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label style="font-size:0.76rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Impact on Work/Life:</label>
+            <input type="text" id="editSummaryImpact" value="${cd.impact || 'Emotional well-being and performance'}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-panel-left); color:var(--text-main); font-size:0.84rem;" />
+          </div>
+          <div>
+            <label style="font-size:0.76rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Supporting Evidence:</label>
+            <input type="text" id="editSummaryEvidence" value="${cd.evidence || 'Emails & Chat logs'}" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-panel-left); color:var(--text-main); font-size:0.84rem;" />
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size:0.76rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">AI Synthesized Narrative Summary:</label>
+          <textarea id="editSummaryNarrative" rows="3" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-panel-left); color:var(--text-main); font-size:0.82rem; font-family:inherit; resize:vertical;">${cd.narrative || cd.description || 'Employee reports a workplace concern affecting emotional well-being.'}</textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+          <button type="button" class="chat-opt-btn" style="background:var(--bg-panel-left); border:1px solid var(--border-color);" onclick="WellbeingModule.closeModal()">Cancel</button>
+          <button type="submit" class="chat-opt-btn" style="background:var(--primary-teal); color:#FFF; font-weight:800; border:none; padding:8px 16px;">💾 Save & Update Summary</button>
+        </div>
+      </form>
+    `;
+
+    modal.classList.add("active");
+  },
+
+  saveEditedSummary() {
+    const categoryEl = document.getElementById("editSummaryCategory");
+    const whenEl = document.getElementById("editSummaryWhen");
+    const whoEl = document.getElementById("editSummaryWho");
+    const impactEl = document.getElementById("editSummaryImpact");
+    const evidenceEl = document.getElementById("editSummaryEvidence");
+    const narrativeEl = document.getElementById("editSummaryNarrative");
+
+    if (categoryEl) this.chatData.category = categoryEl.value;
+    if (whenEl) this.chatData.when = whenEl.value;
+    if (whoEl) this.chatData.who = whoEl.value;
+    if (impactEl) this.chatData.impact = impactEl.value;
+    if (evidenceEl) this.chatData.evidence = evidenceEl.value;
+    if (narrativeEl) {
+      this.chatData.narrative = narrativeEl.value;
+      this.chatData.description = narrativeEl.value;
+    }
+
+    WellbeingModule.closeModal();
+    this.renderStructuredCaseSummary();
   },
 
   // STEP 9 & 10: SUBMIT FINAL REPORT & GENERATE CASE REFERENCE NUMBER (LS360-2026-001245)

@@ -380,7 +380,7 @@ const ChatEngine = {
               <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#E63946; color:#991B1B; font-weight:800; padding:8px 14px; text-align:left;" onclick="WellbeingModule.openMHFAConnectModal()">🌿 Talk to an MHFA (Mental Health First Aider) Right Now</button>
               <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#0284C7; color:#0369A1; font-weight:700; padding:8px 14px; text-align:left;" onclick="WellbeingModule.openMHFAConnectModal()">📅 Book a Urgent Confidential Counselling Appointment</button>
               <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#D97706; color:#92400E; font-weight:700; padding:8px 14px; text-align:left;" onclick="alert('Connecting to 24/7 Employee Assistance Line: 1-800-WELLBEING')">📞 Connect with 24/7 Crisis Helpline</button>
-              <button class="chat-opt-btn" style="background:#FFFFFF; border-color:var(--primary-teal); color:var(--primary-teal); font-weight:700; padding:8px 14px; text-align:left;" onclick="ChatEngine.finalizeReport(true)">📋 Continue with Formal Confidential Case Reporting</button>
+              <button class="chat-opt-btn" style="background:#FFFFFF; border-color:var(--primary-teal); color:var(--primary-teal); font-weight:700; padding:8px 14px; text-align:left;" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
               <button class="chat-opt-btn" style="background:#FFFFFF; border-color:var(--border-color); color:var(--text-main); font-weight:600; padding:8px 14px; text-align:left;" onclick="App.openLearningModal('mental-health')">📚 Explore Self-Help Wellbeing Resources</button>
             </div>
           </div>
@@ -409,7 +409,7 @@ const ChatEngine = {
               <div style="background:rgba(31, 122, 140, 0.06); border:1px solid var(--border-accent); padding:10px; border-radius:8px;">
                 <strong style="color:var(--primary-teal); font-size:0.8rem;">Path B: Formal Reporting</strong>
                 <p style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">Submit confidential report to Ombudsperson regarding workplace factors.</p>
-                <button class="policy-btn" style="margin-top:6px;" onclick="ChatEngine.finalizeReport(true)">Submit Confidential Case</button>
+                <button class="policy-btn" style="margin-top:6px;" onclick="ChatEngine.startFormalReportingFlow()">Submit Confidential Case</button>
               </div>
             </div>
           </div>
@@ -643,6 +643,163 @@ const ChatEngine = {
 
   handleOptionSelect(optText) {
     this.handleUserInput(optText);
+  },
+
+  startFormalReportingFlow() {
+    this.addUserMessage("I would like to continue with Formal Confidential Case Reporting.");
+    this.showTypingIndicator();
+
+    setTimeout(() => {
+      this.hideTypingIndicator();
+      const currentDesc = this.chatData.description || "Based on our conversation, this is what I understand about your concern…";
+
+      this.addAiMessage(`
+        <div class="formal-reporting-wrapper" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md);">
+          
+          <!-- HERO HEADER -->
+          <div class="formal-hero-header">
+            <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-teal); margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+              🔒 You can report your concern confidentially.
+            </h3>
+            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.45; margin:0;">
+              The information you’ve shared can be used to create a formal confidential report. You will have an opportunity to review and edit the information before submitting it.
+            </p>
+          </div>
+
+          <!-- VISUAL WHAT HAPPENS NEXT STEPPER (5 STEPS) -->
+          <div class="formal-stepper-box" style="margin-top:16px; background:rgba(31, 122, 140, 0.04); border:1px solid var(--border-color); border-radius:10px; padding:14px;">
+            <h4 style="font-size:0.86rem; font-weight:800; color:var(--text-main); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+              📍 What happens next?
+            </h4>
+            <div class="formal-stepper-list">
+              <div class="stepper-item">
+                <div class="stepper-badge">1</div>
+                <div class="stepper-content">
+                  <strong>Review your concern</strong>
+                  <p>Review the summary created from your conversation with Lis’Ten-360.</p>
+                </div>
+              </div>
+              <div class="stepper-item">
+                <div class="stepper-badge">2</div>
+                <div class="stepper-content">
+                  <strong>Add details</strong>
+                  <p>Provide any additional information, dates, people involved, or supporting evidence you wish to share.</p>
+                </div>
+              </div>
+              <div class="stepper-item">
+                <div class="stepper-badge">3</div>
+                <div class="stepper-content">
+                  <strong>Choose how you want to report</strong>
+                  <p>Where applicable, select the available reporting route and whether you wish to identify yourself or submit anonymously.</p>
+                </div>
+              </div>
+              <div class="stepper-item">
+                <div class="stepper-badge">4</div>
+                <div class="stepper-content">
+                  <strong>Review before submitting</strong>
+                  <p>You will see the complete report before anything is submitted.</p>
+                </div>
+              </div>
+              <div class="stepper-item">
+                <div class="stepper-badge">5</div>
+                <div class="stepper-content">
+                  <strong>Receive confirmation</strong>
+                  <p>After submission, you will receive a secure reference number to track the case.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LARGE CARD: YOUR AI-GENERATED SUMMARY -->
+          <div class="summary-card-large" style="margin-top:16px; background:var(--bg-panel-left); border:1.5px solid var(--border-accent); border-radius:10px; padding:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">✨ Your AI-generated summary</h4>
+              <button class="action-btn-sm" onclick="ChatEngine.openEditSummaryModal()">✏️ Review & Edit Summary</button>
+            </div>
+            <div id="aiSummaryBoxText" style="font-size:0.84rem; color:var(--text-main); line-height:1.5; background:var(--bg-card); border-left:3px solid var(--primary-teal); padding:12px; border-radius:6px; border-top:1px solid var(--border-color); border-right:1px solid var(--border-color); border-bottom:1px solid var(--border-color);">
+              ${currentDesc}
+            </div>
+          </div>
+
+          <!-- PROCEED SECTION & CTAs -->
+          <div style="margin-top:18px;">
+            <h4 style="font-size:0.9rem; font-weight:800; color:var(--text-main); margin-bottom:10px;">How would you like to proceed?</h4>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; padding:10px 16px; border-radius:8px; border:none; text-align:center; font-size:0.88rem; cursor:pointer;" onclick="ChatEngine.finalizeReport(true)">
+                🔒 Continue with Confidential Reporting
+              </button>
+              <button class="chat-opt-btn" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; padding:8px 14px; text-align:center; cursor:pointer;" onclick="ChatEngine.saveDraftReport()">
+                💾 Save & Continue Later
+              </button>
+            </div>
+
+            <!-- ALTERNATIVE SUPPORT OPTIONS -->
+            <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--border-color);">
+              <span style="font-size:0.76rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:8px;">Alternative support options:</span>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <button class="chat-opt-btn" style="font-size:0.78rem; text-align:center;" onclick="WellbeingModule.openMHFAConnectModal()">🤝 Talk to an MHFA First</button>
+                <button class="chat-opt-btn" style="font-size:0.78rem; text-align:center;" onclick="WellbeingModule.openMHFAConnectModal()">📅 Book Counselling</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONFIDENTIALITY & AI TRANSPARENCY NOTICE -->
+          <div class="ai-transparency-notice" style="margin-top:16px; background:rgba(31, 122, 140, 0.06); border:1px solid var(--border-accent); border-radius:8px; padding:12px 14px; font-size:0.76rem; color:var(--text-muted); line-height:1.45; display:flex; gap:10px; align-items:flex-start;">
+            <span style="font-size:1.1rem; flex-shrink:0;">🔒</span>
+            <div>
+              <strong style="color:var(--text-main);">Confidentiality & AI Transparency Notice:</strong><br/>
+              Your information will be handled according to applicable confidentiality, privacy, and investigation policies. The AI does not independently determine whether a case is substantiated or make decisions about your report.
+            </div>
+          </div>
+
+        </div>
+      `);
+    }, 1200);
+  },
+
+  openEditSummaryModal() {
+    const modal = document.getElementById("generalModal");
+    const content = document.getElementById("modalInnerContent");
+    if (!modal || !content) return;
+
+    const currentText = this.chatData.description || "Based on our conversation, this is what I understand about your concern…";
+
+    content.innerHTML = `
+      <button class="modal-close-btn" aria-label="Close Modal" onclick="WellbeingModule.closeModal()">✕</button>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.8rem;">✏️</span>
+        <h3 class="modal-title">Review & Edit Summary</h3>
+      </div>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">
+        You can edit the AI-generated summary below before submitting your formal confidential report:
+      </p>
+      <textarea id="editSummaryInput" style="width:100%; height:140px; margin-top:10px; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); font-family:inherit; font-size:0.85rem; outline:none;">${currentText}</textarea>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button class="policy-btn" style="background:var(--bg-card); color:var(--text-main);" onclick="WellbeingModule.closeModal()">Cancel</button>
+        <button class="learning-btn" onclick="ChatEngine.saveSummaryEdit()">Save Changes</button>
+      </div>
+    `;
+    modal.classList.add("active");
+  },
+
+  saveSummaryEdit() {
+    const input = document.getElementById("editSummaryInput");
+    if (input) {
+      this.chatData.description = input.value.trim();
+      const box = document.getElementById("aiSummaryBoxText");
+      if (box) box.innerText = this.chatData.description;
+    }
+    WellbeingModule.closeModal();
+  },
+
+  saveDraftReport() {
+    const draftId = "DRAFT-" + Math.floor(1000 + Math.random() * 9000);
+    this.addAiMessage(`
+      <div style="background:var(--secondary-sage-light); border:1px solid var(--border-accent); padding:12px; border-radius:8px;">
+        <strong>💾 Draft Saved Successfully</strong><br/>
+        <span style="font-size:0.78rem; color:var(--text-muted);">Your draft reference is <code>${draftId}</code>. You can return anytime to complete and submit your report.</span>
+      </div>
+    `);
   },
 
   finalizeReport(isAnonymous) {

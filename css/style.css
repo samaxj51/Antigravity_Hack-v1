@@ -992,3 +992,57 @@ nav {
 .modal-close-btn { position: absolute; top: 16px; right: 16px; background: rgba(31, 122, 140, 0.08); border: 1px solid var(--border-color); color: var(--text-muted); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.95rem; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* FORMAL REPORTING FLOW STEPPER & STYLES */
+.formal-stepper-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.stepper-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.stepper-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 24px;
+  bottom: -10px;
+  width: 2px;
+  background: var(--border-accent);
+}
+
+.stepper-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary-teal);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+  box-shadow: 0 0 0 3px var(--bg-card);
+}
+
+.stepper-content strong {
+  font-size: 0.82rem;
+  color: var(--text-main);
+  display: block;
+}
+
+.stepper-content p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  margin-top: 2px;
+}

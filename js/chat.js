@@ -467,18 +467,34 @@ const ChatEngine = {
           riskBadgeColor = "#0284C7";
         }
 
+        const aiSummary = this.generateAICaseSummary();
+
         this.addAiMessage(`
-          <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:10px; padding:14px; margin-top:6px;">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <h4 style="color:var(--primary-teal); font-size:0.95rem;">📊 Biasness & Inclusion Risk Evaluation</h4>
+          <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+              <h4 style="color:var(--primary-teal); font-size:0.95rem; margin:0; font-weight:800;">📊 Biasness Risk & AI Case Summary</h4>
               <span style="background:${riskBadgeColor}; color:white; padding:3px 10px; border-radius:12px; font-size:0.72rem; font-weight:800;">${riskLevel} (${this.biasRiskScore}/100)</span>
             </div>
-            <p style="margin-top:8px; font-size:0.8rem;">
-              Your evaluation indicates a <strong>${riskLevel}</strong> of biasness or exclusion. Select an action below to complete your submission:
+            
+            <p style="margin-top:8px; font-size:0.78rem; color:var(--text-muted);">
+              Summary compiled from your 5 responses:
             </p>
-            <div class="chat-options-grid" style="margin-top:10px;">
-              <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:700; background:rgba(31, 122, 140, 0.06);" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
-              <button class="chat-opt-btn" onclick="ChatEngine.finalizeReport(true)">🔒 Submit 100% Anonymously</button>
+
+            <div style="margin-top:8px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px; font-size:0.78rem; color:var(--text-main);">
+              <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Primary Concern:</strong> ${aiSummary.primaryConcern}</div>
+              <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Impact on Career/Work:</strong> ${aiSummary.impact}</div>
+              <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Differential Treatment Context:</strong> ${aiSummary.incidentSummary}</div>
+              <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Stereotypes / Language Noted:</strong> ${aiSummary.supportRequested}</div>
+              
+              <div style="margin-top:4px; background:var(--bg-card); padding:8px 10px; border-radius:6px; border-left:3px solid var(--primary-teal);">
+                <strong style="color:var(--primary-teal); font-size:0.72rem; display:block;">AI Synthesized Summary:</strong>
+                <p style="margin:2px 0 0 0; font-size:0.75rem; font-style:italic; color:var(--text-main);">"${aiSummary.overallSummary}"</p>
+              </div>
+            </div>
+
+            <div class="chat-options-grid" style="margin-top:12px; flex-direction:column; gap:8px;">
+              <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:800; background:var(--primary-teal); color:#FFFFFF; padding:10px; border-radius:6px; text-align:center;" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting (Generate Ticket Number)</button>
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color);" onclick="ChatEngine.finalizeReport(true)">🔒 Submit 100% Anonymously</button>
             </div>
           </div>
         `);

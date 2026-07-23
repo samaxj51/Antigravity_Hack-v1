@@ -99,6 +99,7 @@ const ChatEngine = {
         <div class="chat-bubble">
           <p>How can I support you today? Select a pathway or type/record your thoughts in your own words:</p>
           <div class="chat-options-grid">
+            <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:700; background:rgba(31, 122, 140, 0.06);" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
             <button class="chat-opt-btn" onclick="ChatEngine.startMentalHealthAssessment()">🌿 Mental Health & Well-being Support</button>
             <button class="chat-opt-btn" onclick="ChatEngine.startBiasnessAssessment()">⚖️ Report Biasness, Favouritism or Exclusion</button>
             <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Workplace Concern')">💬 Report General Workplace Concern</button>
@@ -190,6 +191,10 @@ const ChatEngine = {
     if (!text.trim()) return;
 
     const lower = text.toLowerCase();
+    if (lower.includes("formal") || lower.includes("confidential case") || lower.includes("confidential reporting")) {
+      this.startFormalReportingFlow();
+      return;
+    }
     if (this.mode === "standard" && (lower.includes("mental") || lower.includes("stress") || lower.includes("burnout") || lower.includes("anxiety") || lower.includes("depress"))) {
       this.startMentalHealthAssessment();
       return;
@@ -553,8 +558,8 @@ const ChatEngine = {
               Your evaluation indicates a <strong>${riskLevel}</strong> of biasness or exclusion. Would you like to submit this anonymously to the Ombudsperson?
             </p>
             <div class="chat-options-grid" style="margin-top:10px;">
-              <button class="chat-opt-btn" onclick="ChatEngine.finalizeReport(true)">🔒 Yes, Submit 100% Anonymously</button>
-              <button class="chat-opt-btn" onclick="ChatEngine.finalizeReport(false)">👤 Submit with Identity (Jordan Smith)</button>
+              <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:700; background:rgba(31, 122, 140, 0.06);" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
+              <button class="chat-opt-btn" onclick="ChatEngine.finalizeReport(true)">🔒 Submit 100% Anonymously</button>
             </div>
           </div>
         `);
@@ -625,8 +630,8 @@ const ChatEngine = {
           <p>Understood.</p>
           <p style="margin-top:6px;">${this.standardQuestions[6]}</p>
           <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.finalizeReport(true)">🔒 Yes, 100% Anonymous</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.finalizeReport(false)">👤 No, include my name (Jordan Smith)</button>
+            <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:700; background:rgba(31, 122, 140, 0.06);" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.finalizeReport(true)">🔒 Submit 100% Anonymously</button>
           </div>
         `);
         this.step = 7;

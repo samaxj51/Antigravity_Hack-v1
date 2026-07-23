@@ -7,28 +7,44 @@ const App = {
   theme: "light",
 
   init() {
-    // Check if token exists in localStorage
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
+    // Check if token exists in localStorage; if not, initialize default employee persona
+    let savedToken = localStorage.getItem("token");
+    let savedUser = localStorage.getItem("user");
 
     if (!savedToken || !savedUser) {
-      document.getElementById("ssoLoginOverlay").style.display = "flex";
-      return;
+      const defaultUser = { name: "Jordan Smith", role: "employee" };
+      localStorage.setItem("token", "dummy-jwt-token");
+      localStorage.setItem("user", JSON.stringify(defaultUser));
+      savedToken = "dummy-jwt-token";
+      savedUser = JSON.stringify(defaultUser);
     }
 
     this.token = savedToken;
     this.user = JSON.parse(savedUser);
-    
+
+    // Handle futuristic splash screen display (1 second delay on page load/refresh)
+    const splashLoader = document.getElementById("appSplashLoader");
+    if (splashLoader) {
+      setTimeout(() => {
+        splashLoader.classList.add("fade-out");
+        setTimeout(() => {
+          splashLoader.style.display = "none";
+        }, 400);
+      }, 1000);
+    }
+
     // Hide SSO screen
-    document.getElementById("ssoLoginOverlay").style.display = "none";
-    document.getElementById("mockIdpModal").style.display = "none";
+    const ssoOverlay = document.getElementById("ssoLoginOverlay");
+    const idpModal = document.getElementById("mockIdpModal");
+    if (ssoOverlay) ssoOverlay.style.display = "none";
+    if (idpModal) idpModal.style.display = "none";
 
     // Update user profile UI
     this.updateUserProfileUI();
 
     // Initialize modules
     this.renderLeftDashboard();
-    this.animateMetrics();
+    this.updateHeroGreeting();
     ChatEngine.init();
     DashboardModule.init();
     this.setupEventListeners();
@@ -37,32 +53,26 @@ const App = {
   updateUserProfileUI() {
     const avatar = document.querySelector(".user-avatar");
     const nameSpan = document.querySelector(".user-profile-badge span");
-    const roleSwitcher = document.querySelector(".role-switcher");
 
     if (this.user) {
-      if (avatar) avatar.innerText = this.user.role === "investigator" ? "AR" : "JS";
-      if (nameSpan) nameSpan.innerText = this.user.role === "investigator" ? "Alex Rogers" : "Jordan Smith";
+      const isInv = this.user.role === "investigator";
+      if (avatar) avatar.innerText = isInv ? "AR" : "JS";
+      if (nameSpan) nameSpan.innerText = isInv ? "Alex Rogers" : "Jordan Smith";
 
-      // If employee, disable/hide Investigator Switcher for demonstration, or restrict role switching
-      if (roleSwitcher) {
-        if (this.user.role === "employee") {
-          this.switchRole("employee");
-          document.getElementById("roleBtnInvestigator").style.opacity = "0.5";
-          document.getElementById("roleBtnInvestigator").style.cursor = "not-allowed";
-          document.getElementById("roleBtnInvestigator").title = "Access Restricted: Requires Investigator SSO login";
-        } else {
-          this.switchRole("investigator");
-          document.getElementById("roleBtnInvestigator").style.opacity = "1";
-          document.getElementById("roleBtnInvestigator").style.cursor = "pointer";
-        }
+      // Default view based on logged-in role
+      if (isInv) {
+        this.switchRole("investigator");
+      } else {
+        this.switchRole("employee");
       }
     }
+    this.updateHeroGreeting();
   },
 
   startSSO() {
     const ssoOverlay = document.getElementById("ssoLoginOverlay");
     const idpOverlay = document.getElementById("mockIdpModal");
-    
+
     ssoOverlay.style.display = "none";
     idpOverlay.style.display = "flex";
   },
@@ -75,7 +85,7 @@ const App = {
         body: JSON.stringify({ persona })
       });
       const data = await response.json();
-      
+
       if (data.token) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
@@ -101,30 +111,40 @@ const App = {
     document.getElementById("ssoLoginOverlay").style.display = "flex";
   },
 
-  animateMetrics() {
-    // Count-up animation for 3 metrics cards
-    const animateVal = (id, start, end, duration, suffix = "") => {
-      const obj = document.getElementById(id);
-      if (!obj) return;
-      let startTimestamp = null;
-      const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const currentVal = progress * (end - start) + start;
-        const formatted = (end % 1 === 0 ? Math.floor(currentVal) : currentVal.toFixed(1));
-        obj.innerHTML = formatted + suffix;
-        if (progress < 1) {
-          window.requestAnimationFrame(step);
-        }
-      };
-      window.requestAnimationFrame(step);
-    };
+  updateHeroGreeting() {
+    const titleEl = document.getElementById("heroGreetingTitle");
+    const dateSublineEl = document.getElementById("heroDateSubline");
+    const timeNudgeTextEl = document.getElementById("heroTimeNudgeText");
 
-    setTimeout(() => {
-      animateVal("metricValSafety", 0, 96.4, 1400, "%");
-      animateVal("metricValTime", 0, 3.8, 1000, " Days");
-      animateVal("metricValPrograms", 0, 14, 800, " Programs");
-    }, 200);
+    const userName = (this.user && this.user.name) ? this.user.name : "Jordan Smith";
+    const hour = new Date().getHours();
+
+    let timeGreeting = "👋 Welcome";
+    let nudgeMsg = "Pace your priorities today and remember to take breather breaks.";
+
+    if (hour >= 5 && hour < 12) {
+      timeGreeting = `🌅 Good Morning, ${userName}`;
+      nudgeMsg = "Start your workday with clarity and focus. Take short breaks to maintain momentum.";
+    } else if (hour >= 12 && hour < 17) {
+      timeGreeting = `👋 Good Afternoon, ${userName}`;
+      nudgeMsg = "Pace your afternoon priorities and stay hydrated throughout the day.";
+    } else if (hour >= 17 && hour < 21) {
+      timeGreeting = `🌆 Good Evening, ${userName}`;
+      nudgeMsg = "Wind down your workday smoothly and protect your personal evening rest time.";
+    } else {
+      timeGreeting = `🌙 Good Evening, ${userName}`;
+      nudgeMsg = "Working late? Remember to prioritize self-care and disconnect when ready.";
+    }
+
+    if (titleEl) titleEl.innerText = timeGreeting;
+
+    if (dateSublineEl) {
+      const options = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+      const formattedDate = new Date().toLocaleDateString('en-US', options).toUpperCase();
+      dateSublineEl.innerText = `📅 ${formattedDate}`;
+    }
+
+    if (timeNudgeTextEl) timeNudgeTextEl.innerText = nudgeMsg;
   },
 
   toggleTheme() {
@@ -140,6 +160,12 @@ const App = {
   },
 
   switchRole(role) {
+    // Check permission for Investigator tab
+    if (role === "investigator" && (!this.user || this.user.role !== "investigator")) {
+      this.showInvestigatorAccessRestrictedModal();
+      return;
+    }
+
     this.currentRole = role;
     const empContainer = document.getElementById("employeeView");
     const invContainer = document.getElementById("investigatorView");
@@ -153,22 +179,55 @@ const App = {
     repContainer.style.display = role === "reporting" ? "flex" : "none";
 
     [empBtn, invBtn, repBtn].forEach(btn => {
-      btn.classList.remove("active");
-      btn.setAttribute("aria-checked", "false");
+      if (btn) {
+        btn.classList.remove("active");
+        btn.setAttribute("aria-checked", "false");
+      }
     });
 
-    if (role === "employee") {
+    if (role === "employee" && empBtn) {
       empBtn.classList.add("active");
       empBtn.setAttribute("aria-checked", "true");
-    } else if (role === "investigator") {
+    } else if (role === "investigator" && invBtn) {
       invBtn.classList.add("active");
       invBtn.setAttribute("aria-checked", "true");
       DashboardModule.renderCharts();
-    } else if (role === "reporting") {
+    } else if (role === "reporting" && repBtn) {
       repBtn.classList.add("active");
       repBtn.setAttribute("aria-checked", "true");
       ReportingModule.init();
     }
+  },
+
+  showInvestigatorAccessRestrictedModal() {
+    const modal = document.getElementById("generalModal");
+    const content = document.getElementById("modalInnerContent");
+    if (!modal || !content) {
+      alert("This area is exclusively for investigators. Please login with your investigator login credentials.");
+      return;
+    }
+
+    content.innerHTML = `
+      <button class="modal-close-btn" aria-label="Close Modal" onclick="WellbeingModule.closeModal()">✕</button>
+      <div style="text-align:center; padding:10px 0;">
+        <div style="font-size:3rem; margin-bottom:10px;">🔒</div>
+        <h3 style="font-size:1.2rem; font-weight:800; color:#E63946; margin:0 0 10px 0;">Access Restricted</h3>
+        <p style="font-size:0.92rem; color:var(--text-main); line-height:1.5; margin-bottom:16px;">
+          This area is exclusively for investigators.<br/>
+          <strong>Please login with your investigator login credentials.</strong>
+        </p>
+        <div style="background:rgba(230, 57, 70, 0.08); border:1px solid #E63946; border-radius:8px; padding:12px; font-size:0.8rem; color:var(--text-muted); margin-bottom:20px; text-align:left;">
+          ℹ️ Logged in as: <strong>${this.user ? this.user.name : 'Jordan Smith'} (Employee)</strong>.<br/>
+          To access investigator cases, sign out and login with investigator credentials.
+        </div>
+        <div style="display:flex; justify-content:center; gap:12px;">
+          <button class="chat-opt-btn" style="background:var(--bg-panel-left); border:1px solid var(--border-color); color:var(--text-main); padding:8px 16px;" onclick="WellbeingModule.closeModal()">Cancel</button>
+          <button class="chat-opt-btn" style="background:#E63946; color:#FFF; font-weight:800; border:none; padding:8px 18px;" onclick="WellbeingModule.closeModal(); App.logout();">Sign Out & Switch to Investigator SSO</button>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("active");
   },
 
   renderLeftDashboard() {
@@ -271,11 +330,260 @@ const App = {
     modal.classList.add("active");
   },
 
+  getTimeBasedGreeting(name = "Jordan") {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return `🌅 Good Morning, ${name}`;
+    if (hour >= 12 && hour < 17) return `👋 Good Afternoon, ${name}`;
+    if (hour >= 17 && hour < 21) return `🌆 Good Evening, ${name}`;
+    return `🌙 Good Evening, ${name}`;
+  },
+
+  openTipsModal(type) {
+    const modal = document.getElementById('wellbeingModal');
+    const titleEl = document.getElementById('modalTitle');
+    const listEl = document.getElementById('modalItems');
+    if (!modal) return;
+
+    const data = {
+      wellbeing: {
+        title: "🌿 Positive Wellbeing & Healthy Habits",
+        items: [
+          "🌟 Gratitude Practice: Take 30 seconds to send a quick thank-you note to a teammate.",
+          "💧 Hydration & Reset: Drink a full glass of water and take a 5-minute walking breather.",
+          "🎯 Energy Pacing: Use high-energy windows for your most important creative priorities.",
+          "🧘 Mindful Transition: Pause for 3 deep breaths between meetings to refresh clarity.",
+          "🌱 Work-Life Boundaries: Set a clear log-off time to safeguard your evening personal time.",
+          "🤝 Positive Connections: Take 5 minutes to have an informal check-in with a colleague."
+        ]
+      },
+      productivity: {
+        title: "⚡ Productivity Tips",
+        items: [
+          "🎯 Plan your three most important tasks first.",
+          "⏰ Try the Pomodoro technique (25 minutes work, 5 minutes break).",
+          "📴 Turn off unnecessary notifications.",
+          "🚶 Take a two-minute stretch every hour.",
+          "📝 Finish one task before starting another.",
+          "💧 Stay hydrated throughout the day.",
+          "📅 Block focus time on your calendar.",
+          "📧 Avoid checking email continuously."
+        ]
+      },
+      stress: {
+        title: "🧘 Quick Stress Management Techniques",
+        items: [
+          "🌬 Take five slow deep breaths.",
+          "🧘 Try a two-minute mindfulness exercise.",
+          "🚶 Walk away from your desk for five minutes.",
+          "💧 Drink a glass of water.",
+          "🎵 Listen to calming music.",
+          "📵 Step away from notifications for a few minutes.",
+          "🤖 If you're still feeling stressed, talk to your confidential AI Companion."
+        ]
+      },
+      support: {
+        title: "🤝 Workplace Support Resources",
+        items: [
+          "📚 Managing Workload & Priorities Guide",
+          "❤️ Employee Wellbeing & Mental Health Guide",
+          "🧘 Mental Health Resources",
+          "📞 Employee Assistance Program (EAP) Hotline",
+          "📖 Time Management Guide",
+          "🎥 Short Wellbeing Videos",
+          "💡 Tips for Managing Burnout"
+        ]
+      }
+    };
+
+    const content = data[type] || data.productivity;
+    if (titleEl) titleEl.innerText = content.title;
+    if (listEl) listEl.innerHTML = content.items.map(item => `<div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px 14px; border-radius:12px; font-size:0.8rem; font-weight:600; color:#1E293B;">${item}</div>`).join('');
+    modal.style.display = 'flex';
+  },
+
+  closeTipsModal() {
+    const modal = document.getElementById('wellbeingModal');
+    if (modal) modal.style.display = 'none';
+  },
+
+  selectMood(mood) {
+    if (mood === 'reset') {
+      const panel = document.getElementById('integratedRecommendationPanel');
+      const resetBtn = document.getElementById('moodResetBtn');
+      const badge = document.getElementById('checkInStatusBadge');
+      if (panel) panel.style.display = 'none';
+      if (resetBtn) resetBtn.style.display = 'none';
+      if (badge) badge.style.display = 'none';
+      document.querySelectorAll('.mood-btn').forEach(btn => {
+        btn.style.transform = 'none';
+        btn.style.boxShadow = 'none';
+        btn.style.borderColor = 'var(--border-accent)';
+      });
+      return;
+    }
+
+    const recData = {
+      great: {
+        ackHeader: "It's great to see you're having a positive day!",
+        title: "Today's Wellbeing Balance",
+        text: "Positive days are a wonderful opportunity to build healthy habits that support your long-term mental clarity and productivity. Take a moment to acknowledge your progress and maintain balance.",
+        supportInfo: "💡 <strong>Corporate Wellness Tip:</strong> Take 30 seconds to send a recognition note to a teammate or record a positive milestone in your personal journal.",
+        pBtn: "🤖 Talk to AI Companion",
+        sBtn: "🌿 Explore Wellbeing Tips",
+        icon: "☀️",
+        bg: "#ECFDF5", border: "#A7F3D0", btnBg: "#059669",
+        pAction: () => { const input = document.getElementById('chatInput'); if (input) { input.value = "Hi, I'm feeling great today! How can I maintain this positive energy?"; input.focus(); } },
+        sAction: () => this.openTipsModal('wellbeing')
+      },
+      okay: {
+        ackHeader: "😊 Thanks for checking in today.",
+        title: "Productivity Guidance & Energy Pacing",
+        text: "Having an 'okay' day is completely normal. Here are some actionable productivity tips to help you stay focused, organized, and energized throughout your tasks.",
+        supportInfo: "💡 <strong>Focus Insight:</strong> Utilizing 25-minute Pomodoro focus blocks with 5-minute breather intervals optimizes daily output and reduces cognitive fatigue.",
+        pBtn: "⚡ View Productivity Tips",
+        sBtn: "🤖 Talk to AI Companion",
+        icon: "😊",
+        bg: "#F0F9FF", border: "#BAE6FD", btnBg: "#0284C7",
+        pAction: () => this.openTipsModal('productivity'),
+        sAction: () => { const input = document.getElementById('chatInput'); if (input) { input.value = "I'm feeling okay today. What are some good strategies to stay focused?"; input.focus(); } }
+      },
+      stressed: {
+        ackHeader: "❤️ Thank you for letting us know.",
+        title: "Stress Relief & Workload Management",
+        text: "Workplace stress can accumulate quickly. Explore quick stress management techniques or chat confidentially with your AI companion to decompress.",
+        supportInfo: "💡 <strong>Workplace Support:</strong> Trained peer MHFA Responders and confidential EAP resources are available around the clock if you need an empathetic listener.",
+        pBtn: "🧘 Stress Relief Techniques",
+        sBtn: "🤖 Talk to AI Companion",
+        icon: "❤️",
+        bg: "#FFFBEB", border: "#FDE68A", btnBg: "#D97706",
+        pAction: () => this.openTipsModal('stress'),
+        sAction: () => { const input = document.getElementById('chatInput'); if (input) { input.value = "I'm feeling a bit stressed today with my workload. Can you help me break down my priorities?"; input.focus(); } }
+      },
+      overwhelmed: {
+        ackHeader: "🤝 You're not alone. Let's take it one step at a time.",
+        title: "Step-by-Step Support & Guidance",
+        text: "Feeling overwhelmed can happen when priorities stack up. You can explore official workplace policies below or talk confidentially with our AI Companion.",
+        supportInfo: "💡 <strong>Corporate Protection Assurance:</strong> Company policy guarantees 100% zero-retaliation and complete confidentiality when raising workload concerns or seeking assistance.",
+        badges: ["🔒 100% Confidential", "🛡️ Zero Retaliation", "🤝 Safe Environment"],
+        pBtn: "🤖 Talk to AI Companion",
+        sBtn: "📚 View Featured Policies",
+        icon: "🤝",
+        bg: "#FAF5FF", border: "#E9D5FF", btnBg: "#9333EA",
+        pAction: () => { const input = document.getElementById('chatInput'); if (input) { input.value = "I'm feeling overwhelmed right now. Can we talk through things step by step?"; input.focus(); } },
+        sAction: () => {
+          const sec = document.getElementById('policiesSection') || document.querySelector('.policy-card');
+          if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+        }
+      },
+      'need-support': {
+        ackHeader: "💙 Thank you for trusting listen360.",
+        title: "Confidential Support Resources Available",
+        text: "You are not alone. Our confidential AI Companion is available 24×7 whenever you need someone to listen, or you can connect directly with a qualified Mental Health First Aider.",
+        supportInfo: "💡 <strong>Confidentiality Notice:</strong> All interactions are 256-bit encrypted. Your identity and conversation remain strictly private and protected.",
+        badges: ["🔒 Confidential", "❤️ Judgment-Free", "🤝 Available Anytime"],
+        pBtn: "🤖 Talk to AI Companion",
+        sBtn: "🤝 Connect with MHFA Responder",
+        icon: "💙",
+        bg: "#EEF2FF", border: "#C7D2FE", btnBg: "#4F46E5",
+        pAction: () => { const input = document.getElementById('chatInput'); if (input) { input.value = "I need some personal support right now. Can you guide me through available resources?"; input.focus(); } },
+        sAction: () => WellbeingModule.openMHFAConnectModal()
+      }
+    };
+
+    const data = recData[mood];
+    if (!data) return;
+
+    // Highlight selected mood button
+    document.querySelectorAll('.mood-btn').forEach(btn => {
+      if (btn.getAttribute('data-mood') === mood) {
+        btn.style.transform = 'scale(1.05)';
+        btn.style.borderColor = 'var(--primary-teal)';
+        btn.style.boxShadow = '0 0 0 2px var(--primary-teal)';
+      } else {
+        btn.style.transform = 'none';
+        btn.style.boxShadow = 'none';
+        btn.style.borderColor = 'var(--border-accent)';
+      }
+    });
+
+    const panel = document.getElementById('integratedRecommendationPanel');
+    const resetBtn = document.getElementById('moodResetBtn');
+    const badge = document.getElementById('checkInStatusBadge');
+
+    if (panel) {
+      panel.style.opacity = '0';
+      panel.style.transform = 'translateY(6px)';
+      panel.style.display = 'block';
+      if (resetBtn) resetBtn.style.display = 'block';
+      if (badge) badge.style.display = 'inline-block';
+
+      setTimeout(() => {
+        panel.style.backgroundColor = data.bg;
+        panel.style.borderColor = data.border;
+
+        const userName = (this.user && this.user.name) ? this.user.name : "Jordan Smith";
+        const greeting = this.getTimeBasedGreeting(userName);
+        if (document.getElementById('recTimeGreeting')) {
+          document.getElementById('recTimeGreeting').innerText = greeting;
+        }
+
+        if (document.getElementById('recIcon')) document.getElementById('recIcon').innerText = data.icon;
+        if (document.getElementById('recAckHeader')) document.getElementById('recAckHeader').innerText = data.ackHeader;
+        if (document.getElementById('recTitle')) document.getElementById('recTitle').innerText = data.title;
+        if (document.getElementById('recText')) document.getElementById('recText').innerText = data.text;
+
+        const infoEl = document.getElementById('recSupportInfo');
+        if (infoEl) {
+          infoEl.innerHTML = data.supportInfo;
+          infoEl.style.display = 'block';
+        }
+
+        const badgesEl = document.getElementById('recBadges');
+        if (badgesEl) {
+          if (data.badges) {
+            badgesEl.innerHTML = data.badges.map(b => `<span style="background:white; border:1px solid rgba(0,0,0,0.1); padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">${b}</span>`).join('');
+            badgesEl.style.display = 'flex';
+          } else {
+            badgesEl.style.display = 'none';
+          }
+        }
+
+        const pBtn = document.getElementById('recPrimaryBtn');
+        if (pBtn) {
+          pBtn.innerText = data.pBtn;
+          pBtn.style.backgroundColor = data.btnBg;
+          pBtn.onclick = data.pAction;
+        }
+
+        const sBtn = document.getElementById('recSecondaryBtn');
+        if (sBtn) {
+          if (data.sBtn) {
+            sBtn.innerText = data.sBtn;
+            sBtn.style.display = 'inline-block';
+            sBtn.onclick = data.sAction;
+          } else {
+            sBtn.style.display = 'none';
+          }
+        }
+
+        panel.style.opacity = '1';
+        panel.style.transform = 'translateY(0)';
+      }, 150);
+    }
+  },
+
   setupEventListeners() {
     const input = document.getElementById("chatInput");
     if (input) {
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.sendMessage();
+        }
+      });
       input.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
+          e.preventDefault();
           this.sendMessage();
         }
       });

@@ -40,6 +40,35 @@ const ChatEngine = {
     "Thank you for sharing something that may have been difficult to talk about."
   ],
 
+  // Concern trigger phrases — detected in handleUserInput to start the static workflow
+  concernTriggerPhrases: [
+    "raise concern", "raise a concern", "report concern", "report an issue",
+    "file a report", "report incident", "log concern", "i want to report",
+    "i need to report", "submit a complaint", "help me report",
+    "file concern", "raise concern now", "file report", "yes raise concern",
+    "report a concern", "log a concern", "submit concern"
+  ],
+
+  // Assuring prefixes — fetched from DB, with hardcoded fallback
+  assuringPrefixes: [
+    { prefix_text: "I hear you, and I want you to know that you're in a safe space. Let me help you raise this concern effectively.", context: "concern_start" },
+    { prefix_text: "Thank you for sharing that \u2014 your courage matters. Let's continue step by step.", context: "workflow_step" },
+    { prefix_text: "I'm right here with you. Every detail you share helps us support you better.", context: "workflow_step" },
+    { prefix_text: "You're doing incredibly well. We're making great progress documenting your concern.", context: "workflow_step" },
+    { prefix_text: "Your feelings are valid and your voice matters. Let's keep going together.", context: "workflow_step" },
+    { prefix_text: "I understand how important this is. We're treating your concern with the highest priority.", context: "workflow_step" },
+    { prefix_text: "Take your time \u2014 there's no rush. I'm here to support you through every step.", context: "workflow_step" },
+    { prefix_text: "You're not alone in this. Together, we'll make sure your concern is heard.", context: "workflow_step" },
+    { prefix_text: "We're almost there. Let's review everything to make sure your voice is accurately captured.", context: "workflow_step" },
+    { prefix_text: "Your concern has been heard and formally documented. You have our full support.", context: "submission" }
+  ],
+
+  // DB-fetched data holders (populated on init, fallback to hardcoded above)
+  dbPrefixes: null,
+  dbCategories: null,
+  dbFactFinding: null,
+  prefixUsedIndex: 0,
+
   // 3 STREAMLINED HIGH-RELEVANCE FACT-FINDING QUESTIONS
   factFindingQuestions: [
     {
@@ -138,6 +167,65 @@ const ChatEngine = {
 
   init() {
     this.renderWelcomeMessage();
+    this.fetchWorkflowDataFromDB();
+  },
+
+  // Fetch concern workflow data from DB (assuring prefixes, categories, fact-finding)
+  async fetchWorkflowDataFromDB() {
+    try {
+      const [prefixRes, catRes, ffRes] = await Promise.all([
+        fetch("/api/concern/prefixes").catch(() => null),
+        fetch("/api/concern/categories").catch(() => null),
+        fetch("/api/concern/fact-finding").catch(() => null)
+      ]);
+
+      if (prefixRes && prefixRes.ok) {
+        this.dbPrefixes = await prefixRes.json();
+        if (this.dbPrefixes.length > 0) this.assuringPrefixes = this.dbPrefixes;
+        console.log("\u2705 [ChatEngine] Loaded empathetic prefixes from DB");
+      }
+
+      if (catRes && catRes.ok) {
+        this.dbCategories = await catRes.json();
+        // Update categoryQuestionsMap from DB data
+        if (this.dbCategories.categories) {
+          this.dbCategories.categories.forEach(cat => {
+            if (cat.questions && cat.questions.length > 0) {
+              this.categoryQuestionsMap[cat.name] = cat.questions;
+            }
+          });
+          if (this.dbCategories.defaultQuestions && this.dbCategories.defaultQuestions.length > 0) {
+            this.categoryQuestionsMap["Default"] = this.dbCategories.defaultQuestions;
+          }
+        }
+        console.log("\u2705 [ChatEngine] Loaded categories + questions from DB");
+      }
+
+      if (ffRes && ffRes.ok) {
+        const ffData = await ffRes.json();
+        if (ffData.length > 0) {
+          this.factFindingQuestions = ffData.map(ff => ({
+            id: ff.question_key,
+            question: ff.question_text,
+            options: ff.options
+          }));
+        }
+        console.log("\u2705 [ChatEngine] Loaded fact-finding questions from DB");
+      }
+    } catch (err) {
+      console.warn("\u26A0\uFE0F [ChatEngine] Could not fetch workflow data from DB, using hardcoded fallback.", err);
+    }
+  },
+
+  // Get an assuring prefix by context, cycling through available prefixes
+  getAssuringPrefix(context) {
+    const pool = context
+      ? this.assuringPrefixes.filter(p => p.context === context)
+      : this.assuringPrefixes.filter(p => p.context === "workflow_step");
+    if (pool.length === 0) return this.assuringPrefixes[0]?.prefix_text || "";
+    const prefix = pool[this.prefixUsedIndex % pool.length];
+    this.prefixUsedIndex++;
+    return prefix.prefix_text;
   },
 
   renderWelcomeMessage() {
@@ -160,13 +248,15 @@ const ChatEngine = {
 
       <div class="chat-bubble-wrap ai">
         <div class="chat-bubble">
-          <p>How can I support you today? Describe your concern in your own words, or select a quick option:</p>
-          <div class="chat-options-grid">
+          <p>How can I support you today? Feel free to ask any question about psychological safety, workplace rights, or mental wellbeing:</p>
+          <!-- PRESERVED STATIC INTAKE OPTIONS (ISOLATED - UNCOMMENT TO RE-ENABLE DIRECT INTAKE GRID)
+          <div class="chat-options-grid" style="margin-top:8px;">
             <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Bullying / Harassment')">🛑 Bullying or Anti-Harassment Issue</button>
             <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Well-being / Mental Health')">🌿 Mental Health & Well-being Support</button>
             <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Discrimination')">⚖️ Report Discrimination or Biasness</button>
             <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Workplace Behaviour')">💬 Report General Workplace Concern</button>
           </div>
+          -->
         </div>
       </div>
     `;
@@ -175,48 +265,104 @@ const ChatEngine = {
 
   selectInitialOption(categoryName) {
     this.addUserMessage(`I would like to discuss: ${categoryName}`);
-    this.chatData.category = categoryName;
-    this.step = 1;
-    this.showEmpatheticIntakeResponse();
+    this.chatData = {
+        category: categoryName, confidence: "High", classificationReason: "",
+        narrative: "", description: "", when: "", who: "",
+        recurrence: "", frequencyCount: "", impact: "", evidence: "",
+        isSafe: true, anonymous: true, categoryAnswers: [],
+        riskLevel: "Moderate", riskScore: 50, riskFactors: [], attachments: []
+    };
+    this.startStaticFactFindingWorkflow();
   },
 
-  handleUserInput(text) {
+  async handleUserInput(text) {
     if (!text.trim()) return;
+
+    // If we're in the middle of the static workflow, route to the appropriate step handler
+    if (this.step >= 1 && this.step <= 3) {
+      this.addUserMessage(text);
+      this.processFactFindingStep(text);
+      return;
+    }
+    if (this.step === 10) {
+      this.addUserMessage(text);
+      this.processCategoryQuestionStep(text);
+      return;
+    }
+
+    // Check for case ID tracking pattern (e.g. LS360-2026-123456)
+    const caseIdMatch = text.match(/LS360-\d{4}-\d{4,6}/i);
+    if (caseIdMatch) {
+      this.addUserMessage(text);
+      this.trackTicketById(caseIdMatch[0].toUpperCase());
+      return;
+    }
+
+    // Check for concern trigger phrases — start static workflow
+    const lowerText = text.toLowerCase().trim();
+    const isConcernTrigger = this.concernTriggerPhrases.some(phrase => lowerText.includes(phrase));
+    if (isConcernTrigger) {
+      this.addUserMessage(text);
+      this.prefixUsedIndex = 0; // Reset prefix rotation
+      this.chatData = {
+        category: "", confidence: "High", classificationReason: "",
+        narrative: text, description: text, when: "", who: "",
+        recurrence: "", frequencyCount: "", impact: "", evidence: "",
+        isSafe: true, anonymous: true, categoryAnswers: [],
+        riskLevel: "Moderate", riskScore: 50, riskFactors: [], attachments: []
+      };
+      this.startStaticFactFindingWorkflow();
+      return;
+    }
 
     this.addUserMessage(text);
     this.showTypingIndicator();
 
-    setTimeout(() => {
+    // Direct user messages to Live Gemini AI Model by default
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      });
+
       this.hideTypingIndicator();
 
-      if (this.step === 0) {
-        // Step 1: Free Text Narrative
-        this.chatData.narrative = text;
-        this.chatData.description = text;
-        this.step = 1;
-        this.showEmpatheticIntakeResponse();
-      } else if (this.step >= 1 && this.step <= 3) {
-        // Fact-Finding Questions (1 to 3)
-        this.processFactFindingStep(text);
-      } else if (this.step === 8) {
-        // Manual Category Selection or Confirmation
-        this.processCategorySelection(text);
-      } else if (this.step === 10) {
-        // Category-Specific Questions (1-5)
-        this.processCategoryQuestionStep(text);
-      } else {
-        this.processStandardStep(text);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.text) {
+          this.addAiMessage(data.text);
+          return;
+        }
       }
-    }, 1200);
+    } catch (err) {
+      console.warn("⚠️ /api/chat error, falling back to empathetic statement:", err);
+    }
+
+    this.hideTypingIndicator();
+    this.addAiMessage(this.getRandomEmpatheticStatement());
+  },
+
+  /* =========================================================================
+   * PRESERVED STATIC FACT-FINDING INTAKE WORKFLOW (ISOLATED HELPER ROUTINES)
+   * (Retained for future activation — triggered via startStaticFactFindingWorkflow)
+   * ========================================================================= */
+  startStaticFactFindingWorkflow() {
+    this.step = 1;
+    this.showEmpatheticIntakeResponse();
   },
 
   // STEP 2: EMPATHETIC ACKNOWLEDGMENT & START 3 FACT-FINDING QUESTIONS
   showEmpatheticIntakeResponse() {
     this.showTypingIndicator();
+    const assuringPrefix = this.getAssuringPrefix("concern_start");
     setTimeout(() => {
       this.hideTypingIndicator();
       this.addAiMessage(`
-        <p>Thank you for sharing this with me. I understand that this may not have been easy to share. I will ask you a few quick questions to better understand your concern.</p>
+        <div style="background:rgba(31, 122, 140, 0.04); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px; margin-bottom:10px;">
+          <p style="font-style:italic; color:var(--primary-teal-dark); font-weight:600; margin:0;">💚 ${assuringPrefix}</p>
+        </div>
+        <p>I will ask you a few quick questions to better understand your concern.</p>
         
         <div style="margin-top:10px; background:rgba(31, 122, 140, 0.06); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px;">
           <strong style="color:var(--primary-teal-dark); font-size:0.85rem;">Step 1 of 3 Initial Fact-Finding Assessment</strong>
@@ -229,7 +375,7 @@ const ChatEngine = {
           `).join('')}
         </div>
       `);
-      this.step = 2;
+      this.step = 1; // Step 1 displayed, user answer will process question 1 (index 0)
     }, 1200);
   },
 
@@ -239,7 +385,7 @@ const ChatEngine = {
 
   // PROCESS FACT-FINDING QUESTIONS (Q1 TO Q3)
   processFactFindingStep(userText) {
-    const qIndex = this.step - 1; // 1 to 3 mapping
+    const qIndex = this.step; // 1-based index corresponding to current question answered
     const currentQ = this.factFindingQuestions[qIndex - 1];
 
     if (currentQ) {
@@ -263,9 +409,11 @@ const ChatEngine = {
     }
 
     if (this.step < 3) {
-      const nextQ = this.factFindingQuestions[this.step];
+      const nextQ = this.factFindingQuestions[this.step]; // Array index for question 2 (index 1) and question 3 (index 2)
       this.step++;
+      const stepPrefix = this.getAssuringPrefix("workflow_step");
       this.addAiMessage(`
+        <p style="font-style:italic; color:var(--primary-teal-dark); font-size:0.82rem; margin-bottom:8px;">💚 ${stepPrefix}</p>
         <p style="font-weight:700; color:var(--primary-teal-dark);">${nextQ.question}</p>
         <div class="chat-options-grid">
           ${nextQ.options.map(opt => `
@@ -462,7 +610,9 @@ const ChatEngine = {
     this.showTypingIndicator();
     setTimeout(() => {
       this.hideTypingIndicator();
+      const catPrefix = this.getAssuringPrefix("workflow_step");
       this.addAiMessage(`
+        <p style="font-style:italic; color:var(--primary-teal-dark); font-size:0.82rem; margin-bottom:8px;">\uD83D\uDC9A ${catPrefix}</p>
         <div style="background:rgba(31, 122, 140, 0.08); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px; margin-bottom:8px;">
           <strong>Targeted Assessment Active: ${selectedCategory}</strong><br/>
           <span style="font-size:0.76rem; color:var(--text-muted);">Asking 5 precise targeted questions for ${selectedCategory}.</span>
@@ -487,7 +637,9 @@ const ChatEngine = {
     if (this.categoryStep < 5 && this.categoryStep < qList.length) {
       const nextQ = qList[this.categoryStep];
       this.categoryStep++;
+      const qPrefix = this.getAssuringPrefix("workflow_step");
       this.addAiMessage(`
+        <p style="font-style:italic; color:var(--primary-teal-dark); font-size:0.82rem; margin-bottom:8px;">\uD83D\uDC9A ${qPrefix}</p>
         <p style="font-weight:700; color:var(--primary-teal-dark);">Question ${this.categoryStep} of 5:</p>
         <p style="margin-top:2px;">${nextQ}</p>
       `);
@@ -500,6 +652,7 @@ const ChatEngine = {
   // STEP 7: AI RISK ASSESSMENT ENGINE
   evaluateAIRiskAssessment() {
     this.showTypingIndicator();
+    const riskPrefix = this.getAssuringPrefix("workflow_step");
     setTimeout(() => {
       this.hideTypingIndicator();
 
@@ -547,6 +700,7 @@ const ChatEngine = {
       this.chatData.riskFactors = factors;
 
       this.addAiMessage(`
+        <p style="font-style:italic; color:var(--primary-teal-dark); font-size:0.82rem; margin-bottom:8px;">\uD83D\uDC9A ${riskPrefix}</p>
         <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
           <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
             <div style="display:flex; align-items:center; gap:8px;">
@@ -578,6 +732,7 @@ const ChatEngine = {
   // STEP 8: AI-GENERATED STRUCTURED CASE SUMMARY
   renderStructuredCaseSummary() {
     this.showTypingIndicator();
+    const summaryPrefix = this.getAssuringPrefix("workflow_step");
     setTimeout(() => {
       this.hideTypingIndicator();
 
@@ -592,6 +747,7 @@ const ChatEngine = {
       const aiSummaryNarrative = `The employee reports a concern regarding "${cd.category}" occurring around ${datePeriod}. Individuals involved include ${whoInvolved}. The employee indicates frequency as "${freq}", affecting ${impactText}. Supporting evidence noted: "${evidenceText}". Preference: ${isAnonText}. Preliminary Risk: ${cd.riskLevel}.`;
 
       this.addAiMessage(`
+        <p style="font-style:italic; color:var(--primary-teal-dark); font-size:0.82rem; margin-bottom:8px;">\uD83D\uDC9A ${summaryPrefix}</p>
         <div class="case-summary-review-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
           <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
             <div style="display:flex; align-items:center; gap:8px;">
@@ -728,8 +884,9 @@ const ChatEngine = {
   submitFinalReport() {
     this.addUserMessage("Approve & Submit Formal Report");
     this.showTypingIndicator();
+    const submitPrefix = this.getAssuringPrefix("submission");
 
-    setTimeout(() => {
+    setTimeout(async () => {
       this.hideTypingIndicator();
 
       const year = new Date().getFullYear();
@@ -741,19 +898,70 @@ const ChatEngine = {
       const newCaseRecord = {
         id: caseId,
         category: this.chatData.category || "Workplace Behaviour",
-        risk: (this.chatData.riskLevel || "Moderate").toLowerCase(),
+        risk: (this.chatData.riskLevel || "Moderate"),
         created: nowStr,
+        date: new Date().toISOString(),
         status: "Submitted",
         owner: "Unassigned (Ombudsperson)",
         anonymous: this.chatData.anonymous,
         summary: this.chatData.description || "Formal report submitted via AI intake.",
         impact: this.chatData.impact || "Wellbeing and performance impact",
+        narrative: this.chatData.narrative || this.chatData.description || "",
+        aiSummary: `AI-assisted intake: ${this.chatData.category} concern reported with ${this.chatData.riskLevel} risk level.`,
+        timeline: [
+          { date: new Date().toLocaleString(), title: "Report Submitted", desc: "Submitted via AI Chatbot guided workflow." }
+        ],
         chatData: { ...this.chatData }
       };
 
-      CASES_DATA.unshift(newCaseRecord);
+      // ---- DUAL WRITE: Push to client-side arrays for instant dashboard visibility ----
+      if (typeof INITIAL_SAMPLE_CASES !== 'undefined') {
+        INITIAL_SAMPLE_CASES.unshift(newCaseRecord);
+      }
+      if (typeof DashboardModule !== 'undefined' && DashboardModule.cases) {
+        DashboardModule.cases.unshift(newCaseRecord);
+        // Refresh dashboard metrics and table if the method exists
+        if (typeof DashboardModule.renderMetrics === 'function') DashboardModule.renderMetrics();
+        if (typeof DashboardModule.renderCasesTable === 'function') DashboardModule.renderCasesTable();
+      }
+
+      // ---- POST to server API (dual-write: DB + in-memory) ----
+      const responses = (this.chatData.categoryAnswers || []).map((a, i) => ({
+        question_text: a.question,
+        answer_text: a.answer,
+        step_type: "category",
+        sort_order: i + 1
+      }));
+
+      try {
+        await fetch("/api/concern/cases", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: caseId,
+            category: this.chatData.category || "Workplace Behaviour",
+            risk_level: this.chatData.riskLevel || "Moderate",
+            risk_score: this.chatData.riskScore || 50,
+            risk_factors: this.chatData.riskFactors || [],
+            status: "Submitted",
+            anonymous: this.chatData.anonymous,
+            narrative: this.chatData.narrative || this.chatData.description || "",
+            who_involved: this.chatData.who || "",
+            when_occurred: this.chatData.when || "",
+            recurrence: this.chatData.recurrence || "",
+            impact: this.chatData.impact || "",
+            evidence: this.chatData.evidence || "",
+            owner: "Unassigned (Ombudsperson)",
+            responses: responses
+          })
+        });
+        console.log(`\u2705 [ChatEngine] Case ${caseId} submitted to API successfully.`);
+      } catch (err) {
+        console.warn("\u26A0\uFE0F [ChatEngine] API submit failed, case saved in client-side arrays.", err);
+      }
 
       this.addAiMessage(`
+        <p style="font-style:italic; color:var(--primary-teal-dark); font-size:0.82rem; margin-bottom:8px;">\uD83D\uDC9A ${submitPrefix}</p>
         <div class="final-submission-ticket-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
           <div style="display:flex; align-items:center; gap:10px; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
             <div style="width:34px; height:34px; border-radius:50%; background:var(--color-success-bg); border:1.5px solid var(--color-success); color:var(--color-success); display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:800; flex-shrink:0;">
@@ -847,42 +1055,64 @@ const ChatEngine = {
     `);
   },
 
-  trackTicketById(reportId) {
-    this.addUserMessage(`Track status for Case Reference: ${reportId}`);
+  async trackTicketById(reportId) {
     this.showTypingIndicator();
 
-    setTimeout(() => {
-      this.hideTypingIndicator();
-      const found = CASES_DATA.find(c => c.id && c.id.toUpperCase() === reportId.toUpperCase());
-      const statusLabel = found ? (found.status || "Submitted") : "Submitted";
-      const createdDate = found ? found.created : new Date().toLocaleString();
-      const ownerLabel = found ? (found.owner || "Wellbeing & HR Support Team") : "Wellbeing & HR Support Team";
+    // Try API first, fall back to client-side arrays
+    let found = null;
+    try {
+      const response = await fetch(`/api/concern/cases/${reportId}`);
+      if (response.ok) {
+        found = await response.json();
+      }
+    } catch (err) {
+      console.warn("\u26A0\uFE0F [ChatEngine] API case tracking failed, using client-side data.", err);
+    }
 
-      this.addAiMessage(`
-        <div class="ticket-status-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:10px; padding:16px; margin-top:6px; box-shadow:var(--shadow-sm);">
-          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="font-size:1.2rem;">🔎</span>
-              <strong style="color:var(--primary-teal); font-size:0.9rem;">Case Status: ${reportId}</strong>
-            </div>
-            <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
-              ● ${statusLabel}
-            </span>
-          </div>
+    // Fallback: search client-side arrays
+    if (!found) {
+      if (typeof INITIAL_SAMPLE_CASES !== 'undefined') {
+        found = INITIAL_SAMPLE_CASES.find(c => c.id && c.id.toUpperCase() === reportId.toUpperCase());
+      }
+      if (!found && typeof DashboardModule !== 'undefined' && DashboardModule.cases) {
+        found = DashboardModule.cases.find(c => c.id && c.id.toUpperCase() === reportId.toUpperCase());
+      }
+    }
 
-          <div style="margin-top:10px; font-size:0.78rem; color:var(--text-main); line-height:1.45; display:flex; flex-direction:column; gap:6px;">
-            <div><strong style="color:var(--text-muted);">Assigned Investigator:</strong> ${ownerLabel}</div>
-            <div><strong style="color:var(--text-muted);">Submission Date:</strong> ${createdDate}</div>
-            <div><strong style="color:var(--text-muted);">Confidentiality:</strong> Confidential</div>
-          </div>
+    this.hideTypingIndicator();
 
-          <div style="margin-top:12px; font-size:0.72rem; color:var(--text-dim); display:flex; justify-content:space-between; padding-top:6px; border-top:1px dashed var(--border-color);">
-            <span>SLA: 24h Review Guarantee</span>
-            <span>Ref: <code>${reportId}</code></span>
+    const statusLabel = found ? (found.status || found.risk_level || "Submitted") : "Submitted";
+    const createdDate = found ? (found.created || found.created_at || found.date || new Date().toLocaleString()) : new Date().toLocaleString();
+    const ownerLabel = found ? (found.owner || found.assigned || "Wellbeing & HR Support Team") : "Wellbeing & HR Support Team";
+    const categoryLabel = found ? (found.category || "General Concern") : "General Concern";
+    const riskLabel = found ? (found.risk || found.risk_level || "Moderate") : "Moderate";
+
+    this.addAiMessage(`
+      <div class="ticket-status-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:10px; padding:16px; margin-top:6px; box-shadow:var(--shadow-sm);">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.2rem;">🔎</span>
+            <strong style="color:var(--primary-teal); font-size:0.9rem;">Case Status: ${reportId}</strong>
           </div>
+          <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
+            ● ${statusLabel}
+          </span>
         </div>
-      `);
-    }, 1000);
+
+        <div style="margin-top:10px; font-size:0.78rem; color:var(--text-main); line-height:1.45; display:flex; flex-direction:column; gap:6px;">
+          <div><strong style="color:var(--text-muted);">Category:</strong> ${categoryLabel}</div>
+          <div><strong style="color:var(--text-muted);">Risk Level:</strong> ${riskLabel}</div>
+          <div><strong style="color:var(--text-muted);">Assigned Investigator:</strong> ${ownerLabel}</div>
+          <div><strong style="color:var(--text-muted);">Submission Date:</strong> ${createdDate}</div>
+          <div><strong style="color:var(--text-muted);">Confidentiality:</strong> Confidential</div>
+        </div>
+
+        <div style="margin-top:12px; font-size:0.72rem; color:var(--text-dim); display:flex; justify-content:space-between; padding-top:6px; border-top:1px dashed var(--border-color);">
+          <span>SLA: 24h Review Guarantee</span>
+          <span>Ref: <code>${reportId}</code></span>
+        </div>
+      </div>
+    `);
   },
 
   copyTicketNumber(reportId) {
@@ -895,7 +1125,7 @@ const ChatEngine = {
   },
 
   downloadReportPDF(reportId) {
-    const found = CASES_DATA.find(c => c.id === reportId);
+    const found = (typeof INITIAL_SAMPLE_CASES !== 'undefined' ? INITIAL_SAMPLE_CASES : []).find(c => c.id === reportId);
     const textContent = `CONFIDENTIAL CASE REPORT\nCase Reference Number: ${reportId}\nStatus: ${found ? found.status : 'Submitted'}\nDate: ${new Date().toLocaleString()}\nConfidentiality: Confidential\n\nCategory: ${this.chatData.category}\nNarrative: ${this.chatData.description}`;
 
     const blob = new Blob([textContent], { type: "text/plain" });

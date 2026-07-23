@@ -576,30 +576,30 @@ const ChatEngine = {
     const cd = this.chatData;
     
     // Primary Concern
-    const primaryConcern = cd.description || "Workplace stress and emotional wellbeing factors related to workload and workplace environment.";
+    const primaryConcern = cd.description || "Workplace stress and emotional wellbeing factors related to workload and environment.";
     
     // Emotional State
-    const emotionalState = cd.experiencing || "Feeling overwhelmed, anxious, emotionally strained, and seeking support.";
+    const emotionalState = cd.experiencing || cd.dailyImpact || "Feeling overwhelmed, anxious, or emotionally strained.";
     
-    // Incident Summary
-    const incidentSummary = cd.triggers || cd.description || "User described ongoing workplace situations and environmental pressures affecting day-to-day work experience over recent months.";
+    // Incident / Contributing Factors
+    const incidentSummary = cd.workloadContributing || cd.context || cd.triggers || cd.description || "Workplace situation described during intake assessment.";
     
     // Impact
-    const impact = cd.dailyImpact || "Difficulty concentrating, sleep disruption, reduced motivation, increased anxiety.";
+    const impact = cd.dailyImpact || cd.experiencing || "Affecting daily concentration, productivity, energy, or work performance.";
     
     // Support Requested
-    const supportRequested = cd.desiredSupport || "The user would like confidential support and wishes to formally report the issue.";
+    const supportRequested = cd.desiredSupport || cd.differentialTreatment || "Confidential Ombudsperson review & support requested.";
     
     // Severity assessment
     let severity = "Medium";
-    if (cd.isSafe === false || this.mentalHealthRiskScore >= 40) {
+    if (cd.isSafe === false || this.mentalHealthRiskScore >= 40 || this.biasRiskScore >= 50) {
       severity = "High";
-    } else if (this.mentalHealthRiskScore < 20) {
+    } else if (this.mentalHealthRiskScore < 20 && this.biasRiskScore < 20) {
       severity = "Low";
     }
 
-    // AI Overall Summary Text
-    const overallSummary = `Based on the conversation, the user appears to be experiencing persistent workplace-related stress affecting emotional wellbeing and work performance. The report should be reviewed by the appropriate wellbeing or HR team for confidential follow-up.`;
+    // AI Overall Summary Text (Dynamically built from user's actual answers)
+    const overallSummary = `User reported primary concern regarding "${primaryConcern}", causing impact on "${impact}". Contributing factors noted: "${incidentSummary}". Desired support: "${supportRequested}". Recommended for confidential Ombudsperson review.`;
 
     return {
       primaryConcern,

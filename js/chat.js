@@ -306,23 +306,53 @@ const ChatEngine = {
     setTimeout(() => {
       this.hideTypingIndicator();
 
-      const text = (this.chatData.narrative + " " + this.chatData.description).toLowerCase();
-      let detectedCategory = "Bullying / Harassment";
-      let confidence = "High";
-      let reasoning = "Your responses mention repeated inappropriate comments and impact on your well-being.";
+      const combinedText = [
+        this.chatData.category,
+        this.chatData.narrative,
+        this.chatData.description,
+        this.chatData.who,
+        this.chatData.when,
+        this.chatData.recurrence,
+        this.chatData.impact,
+        this.chatData.evidence
+      ].filter(Boolean).join(" ").toLowerCase();
 
-      if (text.includes("mental") || text.includes("stress") || text.includes("burnout") || text.includes("anxiety") || text.includes("depress")) {
+      let detectedCategory = this.chatData.category || "Workplace Behaviour";
+      let confidence = "High";
+      let reasoning = "Based on your narrative and initial responses regarding workplace situation and impact.";
+
+      if (combinedText.includes("mental") || combinedText.includes("stress") || combinedText.includes("burnout") || combinedText.includes("anxiety") || combinedText.includes("depress") || combinedText.includes("well-being") || combinedText.includes("wellbeing") || combinedText.includes("emotional")) {
         detectedCategory = "Well-being / Mental Health";
         confidence = "High";
-        reasoning = "Your responses indicate emotional strain, workload pressure, or mental health support needs.";
-      } else if (text.includes("bias") || text.includes("favourit") || text.includes("favorit") || text.includes("unfair") || text.includes("discriminat")) {
+        reasoning = "Your responses indicate emotional well-being factors, workplace stress, anxiety, or mental health support needs.";
+      } else if (combinedText.includes("bias") || combinedText.includes("favourit") || combinedText.includes("favorit") || combinedText.includes("discriminat") || combinedText.includes("unfair") || combinedText.includes("exclud") || combinedText.includes("gender") || combinedText.includes("race") || combinedText.includes("age")) {
         detectedCategory = "Discrimination";
         confidence = "High";
-        reasoning = "Your responses mention unfair differential treatment, stereotyping, or exclusion.";
-      } else if (text.includes("retaliat") || text.includes("punish") || text.includes("demot")) {
+        reasoning = "Your responses mention unfair differential treatment, stereotyping, favouritism, or workplace exclusion.";
+      } else if (combinedText.includes("retaliat") || combinedText.includes("punish") || combinedText.includes("demot") || combinedText.includes("payback")) {
         detectedCategory = "Retaliation";
         confidence = "High";
-        reasoning = "Your responses indicate adverse action following a previous report or complaint.";
+        reasoning = "Your responses indicate adverse treatment or penalty following a prior report or protected complaint.";
+      } else if (combinedText.includes("fraud") || combinedText.includes("money") || combinedText.includes("financial") || combinedText.includes("bribe") || combinedText.includes("theft") || combinedText.includes("steal")) {
+        detectedCategory = "Financial / Fraud Concern";
+        confidence = "High";
+        reasoning = "Your responses involve financial irregularities, fraud, or misuse of organizational assets.";
+      } else if (combinedText.includes("ethic") || combinedText.includes("illegal") || combinedText.includes("law") || combinedText.includes("policy") || combinedText.includes("violation")) {
+        detectedCategory = "Ethics / Conduct";
+        confidence = "High";
+        reasoning = "Your responses report non-compliance, policy violations, or breach of ethical conduct standards.";
+      } else if (combinedText.includes("bully") || combinedText.includes("harass") || combinedText.includes("inappropriate comment") || combinedText.includes("target") || combinedText.includes("hostile")) {
+        detectedCategory = "Bullying / Harassment";
+        confidence = "High";
+        reasoning = "Your responses describe repeated inappropriate comments, hostility, or targeted harassment.";
+      } else if (combinedText.includes("manager") || combinedText.includes("supervisor") || combinedText.includes("leadership") || combinedText.includes("boss") || combinedText.includes("executive")) {
+        detectedCategory = "Manager / Leadership Concern";
+        confidence = "Moderate";
+        reasoning = "Your responses highlight leadership, management style, or supervisor relationship concerns.";
+      } else if (this.chatData.category) {
+        detectedCategory = this.chatData.category;
+        confidence = "High";
+        reasoning = `Directly aligned with your selected intake pathway for ${detectedCategory}.`;
       }
 
       this.chatData.category = detectedCategory;

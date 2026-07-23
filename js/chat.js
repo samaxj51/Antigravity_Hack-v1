@@ -660,6 +660,46 @@ const ChatEngine = {
     this.handleUserInput(optText);
   },
 
+  generateAICaseSummary() {
+    const cd = this.chatData;
+    
+    // Primary Concern
+    const primaryConcern = cd.description || "Workplace stress and emotional wellbeing factors related to workload and workplace environment.";
+    
+    // Emotional State
+    const emotionalState = cd.experiencing || "Feeling overwhelmed, anxious, emotionally strained, and seeking support.";
+    
+    // Incident Summary
+    const incidentSummary = cd.triggers || cd.description || "User described ongoing workplace situations and environmental pressures affecting day-to-day work experience over recent months.";
+    
+    // Impact
+    const impact = cd.dailyImpact || "Difficulty concentrating, sleep disruption, reduced motivation, increased anxiety.";
+    
+    // Support Requested
+    const supportRequested = cd.desiredSupport || "The user would like confidential support and wishes to formally report the issue.";
+    
+    // Severity assessment
+    let severity = "Medium";
+    if (cd.isSafe === false || this.mentalHealthRiskScore >= 40) {
+      severity = "High";
+    } else if (this.mentalHealthRiskScore < 20) {
+      severity = "Low";
+    }
+
+    // AI Overall Summary Text
+    const overallSummary = `Based on the conversation, the user appears to be experiencing persistent workplace-related stress affecting emotional wellbeing and work performance. The report should be reviewed by the appropriate wellbeing or HR team for confidential follow-up.`;
+
+    return {
+      primaryConcern,
+      emotionalState,
+      incidentSummary,
+      impact,
+      supportRequested,
+      severity,
+      overallSummary
+    };
+  },
+
   startFormalReportingFlow() {
     this.addUserMessage("📋 Continue with Formal Confidential Case Reporting");
     this.showTypingIndicator();
@@ -667,70 +707,130 @@ const ChatEngine = {
     setTimeout(() => {
       this.hideTypingIndicator();
       
-      // Generate a unique random ticket number (e.g. MHW-847291, CASE-592814, WB-104738)
-      const prefixes = ["MHW", "CASE", "WB"];
+      // Generate Report ID (MHW-2026-483927 or CASE-582941)
+      const year = new Date().getFullYear();
+      const prefixes = ["MHW", "CASE"];
       const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-      const ticketNumber = prefix + "-" + Math.floor(100000 + Math.random() * 900000);
+      const reportNum = prefix === "MHW" 
+        ? `MHW-${year}-${Math.floor(100000 + Math.random() * 900000)}` 
+        : `CASE-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      // Record in system cases database
-      CASES_DATA.unshift({
-        id: ticketNumber,
-        category: this.chatData.category || "Mental Health & Well-being",
-        risk: this.mentalHealthRiskScore >= 30 ? "high" : "moderate",
-        created: "Just Now",
-        status: "submitted",
-        owner: "Unassigned (Ombudsperson)",
+      // Generate AI Summary
+      const aiSummary = this.generateAICaseSummary();
+      const nowStr = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+
+      // Save in system database
+      const caseRecord = {
+        id: reportNum,
+        category: "Mental Health & Well-Being",
+        risk: aiSummary.severity.toLowerCase(),
+        created: nowStr,
+        status: "Submitted",
+        owner: "Wellbeing & HR Support Team",
         anonymous: true,
-        summary: this.chatData.description || "Mental Health & Wellbeing formal confidential report.",
-        impact: this.chatData.dailyImpact || "Wellbeing support requested"
-      });
+        summary: aiSummary.primaryConcern,
+        impact: aiSummary.impact,
+        aiSummary: aiSummary,
+        chatData: { ...this.chatData }
+      };
+
+      CASES_DATA.unshift(caseRecord);
+
+      let severityBadgeColor = "#D97706";
+      if (aiSummary.severity === "High") severityBadgeColor = "#E63946";
+      if (aiSummary.severity === "Low") severityBadgeColor = "#2D6A4F";
 
       this.addAiMessage(`
-        <div class="confirmation-card-ticket" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-sm); border-left:4px solid var(--primary-teal);">
+        <div class="confirmation-card-ticket" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
           
           <!-- HEADER & CHECKMARK -->
           <div style="display:flex; align-items:center; gap:10px; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
             <div style="width:32px; height:32px; border-radius:50%; background:var(--color-success-bg); border:1.5px solid var(--color-success); color:var(--color-success); display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; flex-shrink:0;">
-              ✓
+              ✅
             </div>
             <div>
-              <h3 style="font-size:1.02rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">📋 Confidential Case Report Created</h3>
+              <h3 style="font-size:1.02rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">📋 Confidential Case Report Submitted</h3>
+              <span style="font-size:0.75rem; color:var(--color-success); font-weight:700;">Your confidential report has been successfully created.</span>
             </div>
           </div>
 
-          <!-- MESSAGE -->
-          <p style="font-size:0.84rem; color:var(--text-main); margin-top:12px; line-height:1.45;">
-            Your confidential case report has been successfully created and securely recorded.
-          </p>
-
-          <!-- TRACKING TICKET BOX -->
+          <!-- REPORT NUMBER BOX -->
           <div style="margin-top:12px; background:rgba(31, 122, 140, 0.05); border:1px solid var(--border-color); border-radius:8px; padding:12px; text-align:center;">
-            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">
-              Tracking Ticket
+            <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px;">
+              Report Number
             </span>
             <div style="font-family:'Courier New', monospace; font-size:1.55rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px;">
-              ${ticketNumber}
+              ${reportNum}
             </div>
           </div>
 
-          <!-- ADDITIONAL TEXT -->
-          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:12px; line-height:1.4;">
-            Please save this ticket number. You can use it later to track the status of your confidential case report.
+          <!-- STRUCTURED AI CASE SUMMARY -->
+          <div style="margin-top:14px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:10px; padding:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
+              <h4 style="font-size:0.88rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">✨ AI Case Summary</h4>
+              <span style="background:${severityBadgeColor}; color:#FFF; padding:2px 8px; border-radius:10px; font-size:0.68rem; font-weight:800;">
+                Severity: ${aiSummary.severity}
+              </span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem; line-height:1.4; color:var(--text-main);">
+              <div>
+                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Primary Concern:</strong>
+                <span>${aiSummary.primaryConcern}</span>
+              </div>
+              <div>
+                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Emotional State:</strong>
+                <span>${aiSummary.emotionalState}</span>
+              </div>
+              <div>
+                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Incident Summary:</strong>
+                <span>${aiSummary.incidentSummary}</span>
+              </div>
+              <div>
+                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Impact:</strong>
+                <span>${aiSummary.impact}</span>
+              </div>
+              <div>
+                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Support Requested:</strong>
+                <span>${aiSummary.supportRequested}</span>
+              </div>
+              <div style="margin-top:4px; background:var(--bg-card); border-left:3px solid var(--primary-teal); padding:8px 10px; border-radius:4px;">
+                <strong style="color:var(--primary-teal); display:block; font-size:0.72rem;">AI Generated Summary:</strong>
+                <p style="margin:2px 0 0 0; font-size:0.76rem; color:var(--text-main); font-style:italic;">${aiSummary.overallSummary}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- METADATA BAR -->
+          <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.74rem;">
+            <div style="background:var(--bg-panel-left); padding:6px 10px; border-radius:6px; border:1px solid var(--border-color);">
+              <span style="color:var(--text-muted);">Status:</span> <strong style="color:var(--color-success);">Submitted</strong>
+            </div>
+            <div style="background:var(--bg-panel-left); padding:6px 10px; border-radius:6px; border:1px solid var(--border-color);">
+              <span style="color:var(--text-muted);">Confidentiality:</span> <strong>Confidential</strong>
+            </div>
+          </div>
+
+          <p style="font-size:0.76rem; color:var(--text-muted); margin-top:12px; line-height:1.4;">
+            Please save your Report Number. You can use it to check the status of your report later.
           </p>
 
-          <!-- CARD ACTIONS -->
+          <!-- CARD ACTIONS BUTTONS -->
           <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px;">
-            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:700; border:none; text-align:center; padding:9px 12px; border-radius:6px; font-size:0.82rem; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${ticketNumber}')">
-              📄 Copy Ticket Number
+            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:9px 12px; border-radius:6px; font-size:0.82rem; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${reportNum}')">
+              📄 Copy Report Number
             </button>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.8rem; cursor:pointer;" onclick="ChatEngine.trackTicketById('${ticketNumber}')">
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.downloadReportPDF('${reportNum}')">
+                📥 Download Report (PDF)
+              </button>
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.trackTicketById('${reportNum}')">
                 🔍 Track Report
               </button>
-              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.8rem; cursor:pointer;" onclick="ChatEngine.renderWelcomeMessage()">
-                💬 Return to Chat
-              </button>
             </div>
+            <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.8rem; cursor:pointer;" onclick="ChatEngine.renderWelcomeMessage()">
+              💬 Return to Chat
+            </button>
           </div>
 
         </div>
@@ -871,9 +971,90 @@ const ChatEngine = {
     setTimeout(() => {
       this.hideTypingIndicator();
       this.addAiMessage(`
-        <p>Certainly. Please enter your 6-digit Case ID (e.g. <code>LIS-849201</code>) to check live status updates and ombudsperson notes.</p>
+        <p>Certainly. Please enter your Report Number (e.g. <code>MHW-2026-483927</code> or <code>CASE-582941</code>) to check live status updates and AI summary details.</p>
       `);
     }, 1000);
+  },
+
+  trackTicketById(reportId) {
+    this.addUserMessage(`Track status for Report Number: ${reportId}`);
+    this.showTypingIndicator();
+
+    setTimeout(() => {
+      this.hideTypingIndicator();
+      const found = CASES_DATA.find(c => c.id && c.id.toUpperCase() === reportId.toUpperCase());
+      const statusLabel = found ? (found.status || "Submitted") : "Submitted";
+      const createdDate = found ? found.created : new Date().toLocaleString();
+      const ownerLabel = found ? (found.owner || "Wellbeing & HR Support Team") : "Wellbeing & HR Support Team";
+      
+      const summaryObj = found && found.aiSummary ? found.aiSummary : null;
+
+      this.addAiMessage(`
+        <div class="ticket-status-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:10px; padding:16px; margin-top:6px; box-shadow:var(--shadow-sm);">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:1.2rem;">🔎</span>
+              <strong style="color:var(--primary-teal); font-size:0.9rem;">Report Status: ${reportId}</strong>
+            </div>
+            <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
+              ● ${statusLabel}
+            </span>
+          </div>
+
+          <div style="margin-top:10px; font-size:0.78rem; color:var(--text-main); line-height:1.45; display:flex; flex-direction:column; gap:6px;">
+            <div><strong style="color:var(--text-muted);">Assigned Team:</strong> ${ownerLabel}</div>
+            <div><strong style="color:var(--text-muted);">Submission Date:</strong> ${createdDate}</div>
+            <div><strong style="color:var(--text-muted);">Confidentiality:</strong> Confidential</div>
+            
+            ${summaryObj ? `
+            <div style="margin-top:6px; background:var(--bg-panel-left); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
+              <strong style="color:var(--primary-teal); font-size:0.75rem; display:block; margin-bottom:4px;">✨ AI Case Summary:</strong>
+              <div style="font-size:0.74rem; color:var(--text-muted); display:flex; flex-direction:column; gap:4px;">
+                <div><strong>Primary Concern:</strong> ${summaryObj.primaryConcern}</div>
+                <div><strong>Emotional State:</strong> ${summaryObj.emotionalState}</div>
+                <div><strong>Impact:</strong> ${summaryObj.impact}</div>
+                <div><strong>Support Requested:</strong> ${summaryObj.supportRequested}</div>
+                <div style="margin-top:4px; font-style:italic; color:var(--text-main);">"${summaryObj.overallSummary}"</div>
+              </div>
+            </div>
+            ` : `
+            <div style="margin-top:4px; background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
+              <strong style="color:var(--primary-teal); font-size:0.72rem; display:block;">AI Case Summary:</strong>
+              <p style="margin:2px 0 0 0; font-size:0.75rem; color:var(--text-muted); font-style:italic;">"Mental Health & Wellbeing formal confidential report submitted for review."</p>
+            </div>
+            `}
+          </div>
+
+          <div style="margin-top:12px; font-size:0.72rem; color:var(--text-dim); display:flex; justify-content:space-between; padding-top:6px; border-top:1px dashed var(--border-color);">
+            <span>SLA: 24h Review Guarantee</span>
+            <span>Ref: <code>${reportId}</code></span>
+          </div>
+        </div>
+      `);
+    }, 1000);
+  },
+
+  copyTicketNumber(reportId) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(reportId);
+      alert(`Report Number ${reportId} copied to clipboard!`);
+    } else {
+      alert(`Report Number: ${reportId}`);
+    }
+  },
+
+  downloadReportPDF(reportId) {
+    const found = CASES_DATA.find(c => c.id === reportId);
+    const textContent = found && found.aiSummary 
+      ? `CONFIDENTIAL CASE REPORT\nReport Number: ${reportId}\nStatus: ${found.status}\nDate: ${found.created}\nConfidentiality: Confidential\n\n=== AI CASE SUMMARY ===\nPrimary Concern: ${found.aiSummary.primaryConcern}\nEmotional State: ${found.aiSummary.emotionalState}\nIncident Summary: ${found.aiSummary.incidentSummary}\nImpact: ${found.aiSummary.impact}\nSupport Requested: ${found.aiSummary.supportRequested}\nSeverity: ${found.aiSummary.severity}\n\nAI Summary:\n${found.aiSummary.overallSummary}`
+      : `CONFIDENTIAL CASE REPORT\nReport Number: ${reportId}\nStatus: Submitted\nConfidentiality: Confidential`;
+
+    const blob = new Blob([textContent], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `Confidential_Report_${reportId}.txt`;
+    a.click();
+    alert(`Report ${reportId} downloaded!`);
   },
 
   getRandomEmpatheticStatement() {

@@ -35,17 +35,12 @@ const ChatEngine = {
     "Thank you for sharing something that may have been difficult to talk about."
   ],
 
-  // 10 MENTAL HEALTH & WELL-BEING RISK QUESTIONS
+  // 5 STREAMLINED HIGH-RELEVANCE MENTAL HEALTH & WELLBEING QUESTIONS
   mentalHealthQuestions: [
-    "What aspect of your work or workplace experience is currently affecting your mental or emotional well-being? (For example: workload, stress, burnout, workplace conflict, pressure, uncertainty, change, or isolation)",
-    "How would you describe what you are currently experiencing?",
-    "How is this affecting your day-to-day work experience? (For example: concentration, productivity, attendance, motivation, communication, or managing regular responsibilities)",
-    "Are there specific workplace situations, activities, or interactions that tend to make the situation worse?",
-    "Do you feel that your current workload, working hours, or work expectations are contributing to the concern?",
-    "Do you feel you have adequate support from your manager, team, or workplace to manage the situation?",
-    "Have you previously tried any steps or used any support to help manage what you are experiencing?",
-    "What type of support would be most helpful to you right now?",
-    "Would you like someone from the organisation to contact you to discuss available support options?",
+    "What specific workplace situation or aspect of work is currently affecting your emotional or mental well-being?",
+    "How is this situation impacting your day-to-day work performance, concentration, or personal life?",
+    "Are specific workplace factors (e.g. workload, unrealistic expectations, conflict, management style) contributing to the issue?",
+    "What type of confidential support or guidance would be most helpful to you right now?",
     "Do you feel safe at the moment?"
   ],
 
@@ -218,7 +213,7 @@ const ChatEngine = {
     }, 1300);
   },
 
-  // MENTAL HEALTH & WELL-BEING STEP PROCESSOR
+  // MENTAL HEALTH & WELL-BEING STEP PROCESSOR (STREAMLINED 5-QUESTION FLOW)
   processMentalHealthStep(userText) {
     const statement = this.getRandomEmpatheticStatement();
 
@@ -227,16 +222,13 @@ const ChatEngine = {
         this.chatData.description = userText;
         this.addAiMessage(`
           <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 2 of 10:</p>
+          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 2 of 5:</p>
           <p style="margin-top:2px;">${this.mentalHealthQuestions[1]}</p>
           <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Stress or feeling overwhelmed')">Stress or feeling overwhelmed</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Anxiety or worry')">Anxiety or worry</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Low mood')">Low mood</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Burnout or exhaustion')">Burnout or exhaustion</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Difficulty concentrating')">Difficulty concentrating</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Feeling isolated or unsupported')">Feeling isolated or unsupported</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Loss of motivation')">Loss of motivation</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Concentration & Focus Impact')">Concentration & Focus Impact</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Productivity & Work Quality')">Productivity & Work Quality</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Motivation & Energy Drain')">Motivation & Energy Drain</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Sleep & Emotional Disruption')">Sleep & Emotional Disruption</button>
           </div>
         `);
         this.step = 2;
@@ -244,124 +236,60 @@ const ChatEngine = {
 
       case 2:
         this.chatData.experiencing = userText;
+        this.chatData.dailyImpact = userText;
         this.mentalHealthRiskScore += 10;
         this.addAiMessage(`
           <p>Thank you for describing what you're experiencing. ${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 3 of 10:</p>
+          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 3 of 5:</p>
           <p style="margin-top:2px;">${this.mentalHealthQuestions[2]}</p>
+          <div class="chat-options-grid">
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, work expectations contribute significantly')">Yes, significantly</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Partially contributing factors')">Partially</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('No, personal or non-work factors')">No</button>
+          </div>
         `);
         this.step = 3;
         break;
 
       case 3:
-        this.chatData.dailyImpact = userText;
+        this.chatData.workloadContributing = userText;
+        if (userText.toLowerCase().includes("yes")) this.mentalHealthRiskScore += 15;
         this.addAiMessage(`
-          <p>Understood. Impact on daily work is important to address early. ${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 4 of 10:</p>
+          <p>${statement} Let's ensure you get the right support pathway.</p>
+          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 4 of 5:</p>
           <p style="margin-top:2px;">${this.mentalHealthQuestions[3]}</p>
+          <div class="chat-options-grid">
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Mental Health First Aider (MHFA)')">Mental Health First Aider (MHFA)</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Professional Counselling (EAP)')">Professional Counselling (EAP)</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Guidance from HR / Ombudsperson')">Guidance from HR / Ombudsperson</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Workplace Adjustments & Self-Help')">Workplace Adjustments</button>
+          </div>
         `);
         this.step = 4;
         break;
 
       case 4:
-        this.chatData.triggers = userText;
+        this.chatData.desiredSupport = userText;
+        // FINAL QUESTION (5 OF 5): IMMEDIATE SAFETY & STATUS CHECK
         this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 5 of 10:</p>
-          <p style="margin-top:2px;">${this.mentalHealthQuestions[4]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, work expectations contribute significantly')">Yes, significantly</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Partially contributing')">Partially</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('No, other factors')">No</button>
+          <p style="font-weight:700; color:var(--primary-teal-dark);">Final Question (5 of 5):</p>
+          <p style="margin-top:2px; font-size:0.95rem; font-weight:700; color:var(--color-critical);">Do you feel safe at the moment?</p>
+          <div class="chat-options-grid" style="margin-top:8px;">
+            <button class="chat-opt-btn" style="border-color:var(--color-success); font-weight:700;" onclick="ChatEngine.handleSafetyResponse('Yes')">💚 Yes, I feel safe</button>
+            <button class="chat-opt-btn" style="border-color:var(--color-critical); background:#FEE2E2; color:#991B1B; font-weight:800;" onclick="ChatEngine.handleSafetyResponse('No')">🚨 No, I do not feel safe</button>
+            <button class="chat-opt-btn" style="border-color:var(--color-warning); background:#FEF3C7; color:#92400E; font-weight:700;" onclick="ChatEngine.handleSafetyResponse('Not sure')">⚠️ I'm not sure</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
           </div>
         `);
         this.step = 5;
         break;
 
       case 5:
-        this.chatData.workloadContributing = userText;
-        if (userText.toLowerCase().includes("yes")) this.mentalHealthRiskScore += 15;
-        this.addAiMessage(`
-          <p>Thank you for noting that.</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 6 of 10:</p>
-          <p style="margin-top:2px;">${this.mentalHealthQuestions[5]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, adequate support')">Yes</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Partially supported')">Partially</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('No adequate support')">No</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Prefer not to say')">Prefer not to say</button>
-          </div>
-        `);
-        this.step = 6;
-        break;
-
-      case 6:
-        this.chatData.adequateSupport = userText;
-        if (userText.toLowerCase().includes("no")) this.mentalHealthRiskScore += 15;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 7 of 10:</p>
-          <p style="margin-top:2px;">${this.mentalHealthQuestions[6]}</p>
-        `);
-        this.step = 7;
-        break;
-
-      case 7:
-        this.chatData.previousSteps = userText;
-        this.addAiMessage(`
-          <p>Thank you. Let's make sure we find the right support pathway for you.</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 8 of 10:</p>
-          <p style="margin-top:2px;">${this.mentalHealthQuestions[7]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Someone to listen')">Someone to listen</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Mental Health First Aider')">Mental Health First Aider (MHFA)</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Professional counselling')">Professional counselling</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Guidance from HR')">Guidance from HR / ER</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Workplace adjustments')">Workplace adjustments</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Self-help resources')">Information & Self-help</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Not sure yet')">I'm not sure yet</button>
-          </div>
-        `);
-        this.step = 8;
-        break;
-
-      case 8:
-        this.chatData.desiredSupport = userText;
-        this.addAiMessage(`
-          <p>Noted. We will tailor your support options accordingly.</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 9 of 10:</p>
-          <p style="margin-top:2px;">${this.mentalHealthQuestions[8]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, contact me')">Yes</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('No, self-service')">No</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('I am not sure')">I'm not sure</button>
-          </div>
-        `);
-        this.step = 9;
-        break;
-
-      case 9:
-        this.chatData.orgContact = userText;
-        // QUESTION 10: IMMEDIATE SAFETY CHECK
-        this.addAiMessage(`
-          <p style="font-weight:700; color:var(--primary-teal-dark);">Final Question (10 of 10):</p>
-          <p style="margin-top:2px; font-size:0.95rem; font-weight:700; color:var(--color-critical);">Do you feel safe at the moment?</p>
-          <div class="chat-options-grid" style="margin-top:8px;">
-            <button class="chat-opt-btn" style="border-color:var(--color-success); font-weight:700;" onclick="ChatEngine.handleSafetyResponse('Yes')">💚 Yes, I feel safe</button>
-            <button class="chat-opt-btn" style="border-color:var(--color-critical); background:#FEE2E2; color:#991B1B; font-weight:800;" onclick="ChatEngine.handleSafetyResponse('No')">🚨 No, I do not feel safe</button>
-            <button class="chat-opt-btn" style="border-color:var(--color-warning); background:#FEF3C7; color:#92400E; font-weight:700;" onclick="ChatEngine.handleSafetyResponse('Not sure')">⚠️ I'm not sure</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleSafetyResponse('Prefer not to say')">Prefer not to say</button>
-          </div>
-        `);
-        this.step = 10;
-        break;
-
-      case 10:
         this.handleSafetyResponse(userText);
         break;
 
       default:
-        if (this.step >= 10 || userText.toLowerCase().includes("formal") || userText.toLowerCase().includes("report")) {
+        if (this.step >= 5 || userText.toLowerCase().includes("formal") || userText.toLowerCase().includes("report")) {
           this.startFormalReportingFlow();
         }
         break;

@@ -175,6 +175,17 @@ const App = {
     modal.classList.add("active");
   },
 
+  scrollToLearningSection() {
+    const el = document.getElementById("learningWellbeingSection");
+    const container = document.querySelector(".left-dashboard-panel");
+    if (el && container) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.add("highlight-pulse");
+      setTimeout(() => el.classList.remove("highlight-pulse"), 3000);
+    }
+    this.openLearningModal('mental-health');
+  },
+
   setupEventListeners() {
     const input = document.getElementById("chatInput");
     if (input) {

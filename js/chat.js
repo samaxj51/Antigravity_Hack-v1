@@ -426,8 +426,8 @@ const ChatEngine = {
           <button class="chat-opt-btn" style="background:var(--bg-panel-left); border:1px solid var(--border-accent); color:var(--primary-teal-dark); font-weight:700; text-align:left; padding:10px;" onclick="WellbeingModule.openMHFAConnectModal()">
             Option 2 — Book a Confidential Counselling Appointment
           </button>
-          <button class="chat-opt-btn" style="background:var(--bg-panel-left); border:1px solid var(--border-color); color:var(--text-main); font-weight:600; text-align:left; padding:10px;" onclick="App.openLearningModal('mental-health')">
-            Option 3 — Explore Well-Being & Stress Resources
+          <button class="chat-opt-btn" style="background:var(--bg-panel-left); border:1px solid var(--border-color); color:var(--text-main); font-weight:600; text-align:left; padding:10px;" onclick="App.scrollToLearningSection()">
+            Option 3 — Explore Well-Being & Stress Resources (🧠 Learning & Wellbeing)
           </button>
           <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:left; padding:10px;" onclick="ChatEngine.confirmCategory('Well-being / Mental Health')">
             Option 4 — Continue with Formal Reporting Process

@@ -650,182 +650,82 @@ const ChatEngine = {
   },
 
   startFormalReportingFlow() {
-    this.addUserMessage("I would like to continue with Formal Confidential Case Reporting.");
+    this.addUserMessage("📋 Continue with Formal Confidential Case Reporting");
     this.showTypingIndicator();
 
     setTimeout(() => {
       this.hideTypingIndicator();
-      const currentDesc = this.chatData.description || "Based on our conversation, this is what I understand about your concern…";
-      const caseId = "LIS-" + Math.floor(100000 + Math.random() * 900000);
+      
+      // Generate a unique random ticket number (e.g. MHW-847291, CASE-592814, WB-104738)
+      const prefixes = ["MHW", "CASE", "WB"];
+      const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      const ticketNumber = prefix + "-" + Math.floor(100000 + Math.random() * 900000);
 
-      // Save case to CASES_DATA so it can be tracked immediately
-      const caseObj = {
-        id: caseId,
+      // Record in system cases database
+      CASES_DATA.unshift({
+        id: ticketNumber,
         category: this.chatData.category || "Mental Health & Well-being",
         risk: this.mentalHealthRiskScore >= 30 ? "high" : "moderate",
         created: "Just Now",
         status: "submitted",
         owner: "Unassigned (Ombudsperson)",
         anonymous: true,
-        summary: currentDesc,
-        impact: this.chatData.dailyImpact || "High wellbeing impact"
-      };
-      CASES_DATA.unshift(caseObj);
+        summary: this.chatData.description || "Mental Health & Wellbeing formal confidential report.",
+        impact: this.chatData.dailyImpact || "Wellbeing support requested"
+      });
 
       this.addAiMessage(`
-        <div class="formal-reporting-wrapper" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md);">
+        <div class="confirmation-card-ticket" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-sm); border-left:4px solid var(--primary-teal);">
           
-          <!-- HERO HEADER -->
-          <div class="formal-hero-header">
-            <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary-teal); margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-              🔒 You can report your concern confidentially.
-            </h3>
-            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.45; margin:0;">
-              The information you’ve shared can be used to create a formal confidential report. You will have an opportunity to review and edit the information before submitting it.
-            </p>
-          </div>
-
-          <!-- GENERATED TICKET CARD WITH RANDOM TICKET NUMBER -->
-          <div class="ticket-generated-card" style="margin-top:14px; background:var(--bg-card); border:2px solid var(--primary-teal); border-radius:12px; padding:16px; box-shadow:var(--shadow-md);">
-            <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:1.4rem;">🎫</span>
-                <div>
-                  <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Formal Confidential Case Ticket Generated</h4>
-                  <span style="font-size:0.72rem; color:var(--text-muted);">${this.chatData.category || "Mental Health & Wellbeing"} Support Case</span>
-                </div>
-              </div>
-              <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:3px 10px; border-radius:var(--radius-pill); font-size:0.72rem; font-weight:800;">
-                ● Active / Submitted
-              </span>
+          <!-- HEADER & CHECKMARK -->
+          <div style="display:flex; align-items:center; gap:10px; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
+            <div style="width:32px; height:32px; border-radius:50%; background:var(--color-success-bg); border:1.5px solid var(--color-success); color:var(--color-success); display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; flex-shrink:0;">
+              ✓
             </div>
-
-            <div style="margin-top:10px; background:rgba(31, 122, 140, 0.05); border:1.5px dashed var(--border-accent); border-radius:8px; padding:12px; text-align:center;">
-              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; display:block;">Your Unique Ticket Number</span>
-              <div style="font-family:monospace; font-size:1.6rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px; margin-top:2px;">
-                ${caseId}
-              </div>
-              <span style="font-size:0.72rem; color:var(--primary-teal-dark); margin-top:3px; display:block;">🔒 100% Encrypted, Confidential & Trackable</span>
-            </div>
-
-            <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.76rem; color:var(--text-main);">
-              <div style="background:var(--bg-panel-left); padding:6px 8px; border-radius:6px; border:1px solid var(--border-color);">
-                <span style="color:var(--text-muted); font-weight:600; display:block;">Category:</span>
-                <strong>${this.chatData.category || "Mental Health & Wellbeing"}</strong>
-              </div>
-              <div style="background:var(--bg-panel-left); padding:6px 8px; border-radius:6px; border:1px solid var(--border-color);">
-                <span style="color:var(--text-muted); font-weight:600; display:block;">Confidentiality:</span>
-                <strong>100% Anonymous / Protected</strong>
-              </div>
-              <div style="background:var(--bg-panel-left); padding:6px 8px; border-radius:6px; border:1px solid var(--border-color);">
-                <span style="color:var(--text-muted); font-weight:600; display:block;">SLA Target:</span>
-                <strong>24 Hours Review</strong>
-              </div>
-              <div style="background:var(--bg-panel-left); padding:6px 8px; border-radius:6px; border:1px solid var(--border-color);">
-                <span style="color:var(--text-muted); font-weight:600; display:block;">Assigned To:</span>
-                <strong>Independent Ombudsperson</strong>
-              </div>
-            </div>
-
-            <div style="margin-top:12px; display:flex; gap:8px;">
-              <button class="chat-opt-btn" style="flex:1; background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:9px; border-radius:8px; cursor:pointer;" onclick="ChatEngine.trackTicketById('${caseId}')">
-                🔎 Track My Report Status
-              </button>
-              <button class="chat-opt-btn" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; padding:9px 12px; text-align:center; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${caseId}')">
-                📋 Copy Ticket #
-              </button>
-            </div>
-          </div>
-
-          <!-- VISUAL WHAT HAPPENS NEXT STEPPER (5 STEPS) -->
-          <div class="formal-stepper-box" style="margin-top:16px; background:rgba(31, 122, 140, 0.04); border:1px solid var(--border-color); border-radius:10px; padding:14px;">
-            <h4 style="font-size:0.86rem; font-weight:800; color:var(--text-main); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
-              📍 What happens next?
-            </h4>
-            <div class="formal-stepper-list">
-              <div class="stepper-item">
-                <div class="stepper-badge">1</div>
-                <div class="stepper-content">
-                  <strong>Review your concern</strong>
-                  <p>Review the summary created from your conversation with Lis’Ten-360.</p>
-                </div>
-              </div>
-              <div class="stepper-item">
-                <div class="stepper-badge">2</div>
-                <div class="stepper-content">
-                  <strong>Add details</strong>
-                  <p>Provide any additional information, dates, people involved, or supporting evidence you wish to share.</p>
-                </div>
-              </div>
-              <div class="stepper-item">
-                <div class="stepper-badge">3</div>
-                <div class="stepper-content">
-                  <strong>Choose how you want to report</strong>
-                  <p>Where applicable, select the available reporting route and whether you wish to identify yourself or submit anonymously.</p>
-                </div>
-              </div>
-              <div class="stepper-item">
-                <div class="stepper-badge">4</div>
-                <div class="stepper-content">
-                  <strong>Review before submitting</strong>
-                  <p>You will see the complete report before anything is submitted.</p>
-                </div>
-              </div>
-              <div class="stepper-item">
-                <div class="stepper-badge">5</div>
-                <div class="stepper-content">
-                  <strong>Receive confirmation</strong>
-                  <p>After submission, you will receive a secure reference number to track the case.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- LARGE CARD: YOUR AI-GENERATED SUMMARY -->
-          <div class="summary-card-large" style="margin-top:16px; background:var(--bg-panel-left); border:1.5px solid var(--border-accent); border-radius:10px; padding:16px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-              <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">✨ Your AI-generated summary</h4>
-              <button class="action-btn-sm" onclick="ChatEngine.openEditSummaryModal()">✏️ Review & Edit Summary</button>
-            </div>
-            <div id="aiSummaryBoxText" style="font-size:0.84rem; color:var(--text-main); line-height:1.5; background:var(--bg-card); border-left:3px solid var(--primary-teal); padding:12px; border-radius:6px; border-top:1px solid var(--border-color); border-right:1px solid var(--border-color); border-bottom:1px solid var(--border-color);">
-              ${currentDesc}
-            </div>
-          </div>
-
-          <!-- PROCEED SECTION & CTAs -->
-          <div style="margin-top:18px;">
-            <h4 style="font-size:0.9rem; font-weight:800; color:var(--text-main); margin-bottom:10px;">How would you like to proceed?</h4>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; padding:10px 16px; border-radius:8px; border:none; text-align:center; font-size:0.88rem; cursor:pointer;" onclick="ChatEngine.trackTicketById('${caseId}')">
-                🔎 Track This Ticket (${caseId})
-              </button>
-              <button class="chat-opt-btn" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; padding:8px 14px; text-align:center; cursor:pointer;" onclick="ChatEngine.saveDraftReport()">
-                💾 Save & Continue Later
-              </button>
-            </div>
-
-            <!-- ALTERNATIVE SUPPORT OPTIONS -->
-            <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--border-color);">
-              <span style="font-size:0.76rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:8px;">Alternative support options:</span>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                <button class="chat-opt-btn" style="font-size:0.78rem; text-align:center;" onclick="WellbeingModule.openMHFAConnectModal()">🤝 Talk to an MHFA First</button>
-                <button class="chat-opt-btn" style="font-size:0.78rem; text-align:center;" onclick="WellbeingModule.openMHFAConnectModal()">📅 Book Counselling</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- CONFIDENTIALITY & AI TRANSPARENCY NOTICE -->
-          <div class="ai-transparency-notice" style="margin-top:16px; background:rgba(31, 122, 140, 0.06); border:1px solid var(--border-accent); border-radius:8px; padding:12px 14px; font-size:0.76rem; color:var(--text-muted); line-height:1.45; display:flex; gap:10px; align-items:flex-start;">
-            <span style="font-size:1.1rem; flex-shrink:0;">🔒</span>
             <div>
-              <strong style="color:var(--text-main);">Confidentiality & AI Transparency Notice:</strong><br/>
-              Your information will be handled according to applicable confidentiality, privacy, and investigation policies. The AI does not independently determine whether a case is substantiated or make decisions about your report.
+              <h3 style="font-size:1.02rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">📋 Confidential Case Report Created</h3>
+            </div>
+          </div>
+
+          <!-- MESSAGE -->
+          <p style="font-size:0.84rem; color:var(--text-main); margin-top:12px; line-height:1.45;">
+            Your confidential case report has been successfully created and securely recorded.
+          </p>
+
+          <!-- TRACKING TICKET BOX -->
+          <div style="margin-top:12px; background:rgba(31, 122, 140, 0.05); border:1px solid var(--border-color); border-radius:8px; padding:12px; text-align:center;">
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">
+              Tracking Ticket
+            </span>
+            <div style="font-family:'Courier New', monospace; font-size:1.55rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px;">
+              ${ticketNumber}
+            </div>
+          </div>
+
+          <!-- ADDITIONAL TEXT -->
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:12px; line-height:1.4;">
+            Please save this ticket number. You can use it later to track the status of your confidential case report.
+          </p>
+
+          <!-- CARD ACTIONS -->
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px;">
+            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:700; border:none; text-align:center; padding:9px 12px; border-radius:6px; font-size:0.82rem; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${ticketNumber}')">
+              📄 Copy Ticket Number
+            </button>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.8rem; cursor:pointer;" onclick="ChatEngine.trackTicketById('${ticketNumber}')">
+                🔍 Track Report
+              </button>
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.8rem; cursor:pointer;" onclick="ChatEngine.renderWelcomeMessage()">
+                💬 Return to Chat
+              </button>
             </div>
           </div>
 
         </div>
       `);
-    }, 1200);
+      this.step = 99;
+    }, 1000);
   },
 
   openEditSummaryModal() {
@@ -875,7 +775,7 @@ const ChatEngine = {
 
   finalizeReport(isAnonymous) {
     this.chatData.anonymous = isAnonymous;
-    this.addUserMessage(isAnonymous ? "I would like to submit this report confidentially & anonymously." : "I am submitting this report with my identity (Jordan Smith).");
+    this.addUserMessage(isAnonymous ? "I would prefer to submit this report completely anonymously." : "You may include my identity.");
 
     this.showTypingIndicator();
 
@@ -883,7 +783,7 @@ const ChatEngine = {
       this.hideTypingIndicator();
       const caseId = "LIS-" + Math.floor(100000 + Math.random() * 900000);
 
-      const caseObj = {
+      CASES_DATA.unshift({
         id: caseId,
         category: this.chatData.category || "Mental Health & Well-being",
         risk: this.mentalHealthRiskScore >= 30 ? "high" : "moderate",
@@ -893,110 +793,22 @@ const ChatEngine = {
         anonymous: isAnonymous,
         summary: this.chatData.description || "Wellbeing and workplace factors report.",
         impact: this.chatData.dailyImpact || "High wellbeing impact"
-      };
-
-      CASES_DATA.unshift(caseObj);
+      });
 
       this.addAiMessage(`
-        <div class="ticket-generated-card" style="background:var(--bg-card); border:2px solid var(--primary-teal); border-radius:12px; padding:18px; margin-top:8px; box-shadow:var(--shadow-md);">
-          
-          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:1.4rem;">🎫</span>
-              <div>
-                <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Formal Case Ticket Generated</h4>
-                <span style="font-size:0.72rem; color:var(--text-muted);">Confidential Case Reference</span>
-              </div>
-            </div>
-            <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:3px 10px; border-radius:var(--radius-pill); font-size:0.72rem; font-weight:800;">
-              ● Active / Submitted
-            </span>
-          </div>
-
-          <div style="margin-top:12px; background:rgba(31, 122, 140, 0.05); border:1.5px dashed var(--border-accent); border-radius:8px; padding:12px; text-align:center;">
-            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; display:block;">Your Unique Ticket Number</span>
-            <div style="font-family:monospace; font-size:1.6rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px; margin-top:2px;">
-              ${caseId}
-            </div>
-            <span style="font-size:0.7rem; color:var(--primary-teal-dark); margin-top:2px; display:block;">🔒 100% Encrypted & Confidential</span>
-          </div>
-
-          <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.76rem; color:var(--text-main);">
-            <div style="background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
-              <span style="color:var(--text-muted); font-weight:600; display:block;">Category:</span>
-              <strong>${this.chatData.category || "Mental Health & Wellbeing"}</strong>
-            </div>
-            <div style="background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
-              <span style="color:var(--text-muted); font-weight:600; display:block;">Reporter Status:</span>
-              <strong>${isAnonymous ? '100% Anonymous' : 'Named (Jordan Smith)'}</strong>
-            </div>
-            <div style="background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
-              <span style="color:var(--text-muted); font-weight:600; display:block;">SLA Target:</span>
-              <strong>24 Hours Initial Review</strong>
-            </div>
-            <div style="background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
-              <span style="color:var(--text-muted); font-weight:600; display:block;">Assigned To:</span>
-              <strong>Independent Ombudsperson</strong>
-            </div>
-          </div>
-
-          <div style="margin-top:14px; display:flex; gap:8px;">
-            <button class="chat-opt-btn" style="flex:1; background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px; border-radius:8px; cursor:pointer;" onclick="ChatEngine.trackTicketById('${caseId}')">
-              🔎 Track My Report Status
-            </button>
-            <button class="chat-opt-btn" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; padding:10px 14px; text-align:center; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${caseId}')">
-              📋 Copy Ticket #
-            </button>
-          </div>
-
+        <div style="background:var(--secondary-sage-light); border:1px solid var(--border-accent); padding:14px; border-radius:10px;">
+          <h4 style="color:var(--primary-teal-dark); margin-bottom:6px;">✅ Confidential Case Report Submitted</h4>
+          <p><strong>Tracking Case ID:</strong> <span style="font-family:monospace; background:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">${caseId}</span></p>
+          <p style="margin-top:6px; font-size:0.8rem;">
+            Thank you for sharing something that may have been difficult to talk about. Your report has been routed securely to an assigned Independent Ombudsperson under strict 24h SLA.
+          </p>
+          <p style="margin-top:8px; font-size:0.75rem; color:var(--text-muted);">
+            🔒 Identity Status: <strong>${isAnonymous ? '100% Anonymous' : 'Named Report (Jordan Smith)'}</strong>
+          </p>
         </div>
       `);
       this.step = 99;
-    }, 1400);
-  },
-
-  trackTicketById(caseId) {
-    this.addUserMessage(`Track status for Ticket Number: ${caseId}`);
-    this.showTypingIndicator();
-
-    setTimeout(() => {
-      this.hideTypingIndicator();
-      const found = CASES_DATA.find(c => c.id.toUpperCase() === caseId.toUpperCase());
-      const statusLabel = found ? found.status.toUpperCase() : "SUBMITTED / ACTIVE";
-
-      this.addAiMessage(`
-        <div class="ticket-status-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:10px; padding:14px; margin-top:6px; box-shadow:var(--shadow-sm);">
-          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="font-size:1.2rem;">🔎</span>
-              <strong style="color:var(--primary-teal); font-size:0.9rem;">Ticket Status: ${caseId}</strong>
-            </div>
-            <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
-              ● ${statusLabel}
-            </span>
-          </div>
-          <div style="margin-top:10px; font-size:0.8rem; color:var(--text-main); line-height:1.45;">
-            <p><strong>Latest Update:</strong> Your confidential report is assigned to the Independent Ombudsperson team.</p>
-            <p style="margin-top:4px; font-size:0.75rem; color:var(--text-muted);">
-              SLA Commitment: 24-hour review guarantee. All communication remains 100% confidential.
-            </p>
-          </div>
-          <div style="margin-top:10px; font-size:0.72rem; color:var(--text-dim); display:flex; justify-content:space-between; padding-top:6px; border-top:1px dashed var(--border-color);">
-            <span>Submitted: ${found ? found.created : 'Just now'}</span>
-            <span>Ref: <code>${caseId}</code></span>
-          </div>
-        </div>
-      `);
-    }, 1000);
-  },
-
-  copyTicketNumber(caseId) {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(caseId);
-      alert(`Ticket Number ${caseId} copied to clipboard!`);
-    } else {
-      alert(`Ticket Number: ${caseId}`);
-    }
+    }, 1600);
   },
 
   toggleVoiceRecording() {

@@ -40,13 +40,39 @@ const ChatEngine = {
     "Thank you for sharing something that may have been difficult to talk about."
   ],
 
-  // Concern trigger phrases — detected in handleUserInput to start the static workflow
+  // Concern trigger phrases — comprehensive categories & action verb + safety noun detection
   concernTriggerPhrases: [
-    "raise concern", "raise a concern", "report concern", "report an issue",
-    "file a report", "report incident", "log concern", "i want to report",
-    "i need to report", "submit a complaint", "help me report",
-    "file concern", "raise concern now", "file report", "yes raise concern",
-    "report a concern", "log a concern", "submit concern"
+    // 1. Direct Reporting & Formal Triggers
+    "raise a concern", "raise concern", "raising a concern", "report concern", "report an issue",
+    "report an incident", "report a hazard", "file a report", "safety report", "file concern",
+    "whistleblower", "report misconduct", "escalating this", "escalation", "log a ticket",
+    "log a safety issue", "log concern", "compliance issue", "safety violation", "speak up",
+    "hr concern", "i want to report", "i need to report", "submit a complaint", "help me report",
+    "submit concern", "raise concern now", "yes raise concern", "report a concern", "log a concern",
+    
+    // 2. Immediate Hazards & Dangerous Conditions
+    "unsafe", "dangerous", "hazardous", "life-threatening", "critical condition", "unsafe practice",
+    "exposed wiring", "spill", "leak", "slippery", "blocked exit", "fire hazard", "structural damage",
+    "broken equipment", "no ppe", "missing guard", "faulty gear", "toxic waste", "poor ventilation",
+
+    // 3. Injury, Near-Miss & Harm Language
+    "near miss", "almost got hurt", "barely avoided", "close call", "potential accident",
+    "injured", "hurt", "bleeding", "shock", "burn", "strain", "trip", "fall", "slip",
+    "unconscious", "medical attention", "first aid required", "fumes", "dizzy",
+    "chemical exposure", "contamination", "feeling sick from",
+
+    // 4. Emotional, Hesitant & Informal Phrasing
+    "not sure if this is standard", "is it normal that", "don't feel comfortable", "dont feel comfortable",
+    "feels unsafe", "someone's going to get hurt", "someones going to get hurt", "accident waiting to happen",
+    "should this be leaking", "is anyone going to fix", "that doesn't look right", "that doesnt look right",
+
+    // 5. Behavioral & Psychological Safety
+    "bullying", "harassment", "discrimination", "unsafe environment", "hostile work environment",
+    "overworked", "fatigue risk", "threat", "intimidation", "verbal abuse",
+
+    // 6. Regulatory & Standard Compliance
+    "osha violation", "hse concern", "non-compliant", "non compliant", "breaches safety rules",
+    "protocol breach", "ignored standard procedure", "safety audit failure", "failed check"
   ],
 
   // Assuring prefixes — fetched from DB, with hardcoded fallback
@@ -298,9 +324,16 @@ const ChatEngine = {
       return;
     }
 
-    // Check for concern trigger phrases — start static workflow
+    // Check for concern trigger phrases & Action Verb + Safety Noun patterns — start static workflow
     const lowerText = text.toLowerCase().trim();
-    const isConcernTrigger = this.concernTriggerPhrases.some(phrase => lowerText.includes(phrase));
+    
+    // Action Verbs + Safety Nouns trigger pattern evaluation
+    const actionVerbs = ["report", "file", "log", "raise", "feel", "feels", "found", "saw", "notice", "noticed", "spot", "spotted", "experiencing", "facing", "escalate", "escalating", "speak"];
+    const safetyNouns = ["hazard", "leak", "wiring", "spill", "danger", "risk", "injury", "hurt", "issue", "incident", "violation", "concern", "unsafe", "breach", "misconduct", "harassment", "bullying", "retaliation", "abuse", "osha", "ppe"];
+    
+    const hasActionAndNoun = actionVerbs.some(v => lowerText.includes(v)) && safetyNouns.some(n => lowerText.includes(n));
+    const isConcernTrigger = hasActionAndNoun || this.concernTriggerPhrases.some(phrase => lowerText.includes(phrase));
+    
     if (isConcernTrigger) {
       this.addUserMessage(text);
       this.prefixUsedIndex = 0; // Reset prefix rotation
@@ -411,6 +444,14 @@ const ChatEngine = {
     if (this.step < 3) {
       const nextQ = this.factFindingQuestions[this.step]; // Array index for question 2 (index 1) and question 3 (index 2)
       this.step++;
+      
+      // Contextual suggested reply options
+      if (nextQ.id === "recurrence_evidence") {
+        this.updateSuggestedReplies(["Repeated incident & Evidence available", "Single occurrence & No evidence", "I need confidential help"]);
+      } else if (nextQ.id === "safety_anonymity") {
+        this.updateSuggestedReplies(["💚 Safe & Submit 100% Anonymously", "💚 Safe & Include Identity", "🚨 Unsafe / At Risk"]);
+      }
+
       const stepPrefix = this.getAssuringPrefix("workflow_step");
       this.addAiMessage(`
         <p style="font-style:italic; color:var(--primary-teal-dark); font-size:0.82rem; margin-bottom:8px;">💚 ${stepPrefix}</p>
@@ -423,6 +464,7 @@ const ChatEngine = {
       `);
     } else {
       // Completed 3 Fact-Finding Questions -> Move to AI Classification
+      this.updateSuggestedReplies(["🟢 Yes, continue", "🔵 Choose a different category", "🌿 I need mental health support"]);
       this.evaluateAIConcernClassification();
     }
   },
@@ -1134,6 +1176,88 @@ const ChatEngine = {
     a.download = `Confidential_Report_${reportId}.txt`;
     a.click();
     alert(`Report ${reportId} downloaded!`);
+  },
+
+  useSuggestedReply(text) {
+    const input = document.getElementById("chatInput");
+    if (input) {
+      input.value = text;
+      App.sendMessage();
+    } else {
+      this.handleUserInput(text);
+    }
+  },
+
+  updateSuggestedReplies(repliesList) {
+    const box = document.getElementById("suggestedRepliesBox");
+    if (!box) return;
+    if (!repliesList || repliesList.length === 0) {
+      box.style.display = "none";
+      return;
+    }
+    box.style.display = "flex";
+    box.innerHTML = repliesList.map(r => `
+      <button class="suggested-reply-chip" onclick="ChatEngine.useSuggestedReply('${r.replace(/'/g, "\\'")}')">${r}</button>
+    `).join("");
+  },
+
+  toggleDictation() {
+    const btn = document.getElementById("voiceDictateBtn");
+    const input = document.getElementById("chatInput");
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("🗣️ Web Speech Dictation is not supported by your browser. Please use Google Chrome, Edge, or Safari.");
+      return;
+    }
+
+    if (this.recognitionInstance) {
+      this.recognitionInstance.stop();
+      this.recognitionInstance = null;
+      if (btn) btn.classList.remove("dictating");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onstart = () => {
+        this.recognitionInstance = recognition;
+        if (btn) btn.classList.add("dictating");
+        if (input) input.placeholder = "🎙️ Dictating live... Speak now...";
+      };
+
+      recognition.onresult = (event) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (input && transcript) {
+          input.value = transcript;
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.warn("⚠️ [Dictation] Error:", event.error);
+        if (btn) btn.classList.remove("dictating");
+        if (input) input.placeholder = "Type or dictate your concern in your own words...";
+        this.recognitionInstance = null;
+      };
+
+      recognition.onend = () => {
+        if (btn) btn.classList.remove("dictating");
+        if (input) input.placeholder = "Type or dictate your concern in your own words...";
+        this.recognitionInstance = null;
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error("❌ Dictation initialization failed:", err);
+      alert("Could not start voice dictation. Please check microphone permissions.");
+    }
   },
 
   getRandomEmpatheticStatement() {

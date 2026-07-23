@@ -10,11 +10,23 @@ const AiIntelligence = {
 
     console.log(`🚀 [Client AI] Submitting query to /api/ai-intelligence: "${queryText}"`);
     
-    // Check if user explicitly expresses desire to raise/file a concern
+    // Check if user explicitly expresses desire to raise/file a concern or matches safety trigger keywords
     const lowerQ = queryText.toLowerCase().trim();
-    const concernTriggers = ["raise concern", "raise a concern", "file concern", "report concern", "log concern", "raise concern now", "file report", "yes raise concern"];
+    const concernTriggers = [
+      "raise concern", "raise a concern", "raising a concern", "file concern", "report concern",
+      "log concern", "raise concern now", "file report", "yes raise concern", "report incident",
+      "report a hazard", "safety report", "whistleblower", "report misconduct", "escalation",
+      "compliance issue", "safety violation", "speak up", "hr concern", "unsafe", "dangerous",
+      "near miss", "close call", "injured", "feels unsafe", "bullying", "harassment", "osha"
+    ];
     
-    if (concernTriggers.some(t => lowerQ.includes(t))) {
+    const actionVerbs = ["report", "file", "log", "raise", "feel", "feels", "found", "saw", "notice", "noticed", "spot", "spotted", "experiencing", "facing", "escalate", "escalating", "speak"];
+    const safetyNouns = ["hazard", "leak", "wiring", "spill", "danger", "risk", "injury", "hurt", "issue", "incident", "violation", "concern", "unsafe", "breach", "misconduct", "harassment", "bullying", "retaliation", "abuse", "osha", "ppe"];
+    
+    const hasActionAndNoun = actionVerbs.some(v => lowerQ.includes(v)) && safetyNouns.some(n => lowerQ.includes(n));
+    const isTriggered = hasActionAndNoun || concernTriggers.some(t => lowerQ.includes(t));
+    
+    if (isTriggered) {
       box.innerHTML = `
         <strong>📋 Starting Confidential Concern Submission:</strong><br/>
         You are now ready to document your concern confidentially. <br/><br/>

@@ -481,11 +481,23 @@
           <!-- Rendered dynamically by chat.js -->
         </div>
 
-        <!-- Chat Input Footer Bar with Text, Voice, & Attachment Controls -->
+        <!-- Suggested Quick Reply Chips Container (Above Input Bar) -->
+        <div id="suggestedRepliesBox" class="suggested-replies-container" style="display: flex; gap: 6px; padding: 6px 14px 4px 14px; background: var(--bg-card); overflow-x: auto; border-top: 1px solid var(--border-color);">
+          <button class="suggested-reply-chip" onclick="ChatEngine.useSuggestedReply('I want to report a safety hazard')">⚠️ Report a Safety Hazard</button>
+          <button class="suggested-reply-chip" onclick="ChatEngine.useSuggestedReply('I feel unsafe at work')">🛡️ I feel unsafe at work</button>
+          <button class="suggested-reply-chip" onclick="ChatEngine.useSuggestedReply('How do I submit a confidential report?')">❓ How to submit report?</button>
+        </div>
+
+        <!-- Chat Input Footer Bar with Text, Voice Dictation, & Attachment Controls -->
         <div class="chat-footer">
           <button id="attachmentBtn" class="chat-tool-btn" title="Attach Document/Image" aria-label="Attach Document"
             onclick="ChatEngine.triggerFileUpload()">
             📎
+          </button>
+
+          <button id="voiceDictateBtn" class="chat-tool-btn" title="Click to Dictate (Voice to Text)"
+            aria-label="Click to Dictate" onclick="ChatEngine.toggleDictation()">
+            🗣️
           </button>
 
           <button id="voiceRecordBtn" class="chat-tool-btn" title="Voice Recording Mode"
@@ -494,7 +506,7 @@
           </button>
 
           <input id="chatInput" type="text" class="chat-input"
-            placeholder="Type or record your concern in your own words..." aria-label="Message Input"
+            placeholder="Type or dictate your concern in your own words..." aria-label="Message Input"
             onkeypress="if(event.key==='Enter'){ event.preventDefault(); App.sendMessage(); }" />
 
           <button class="send-btn" onclick="App.sendMessage()" title="Send Message" aria-label="Send Message">➤</button>

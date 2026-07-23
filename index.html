@@ -80,56 +80,143 @@
     <!-- PART A & B: EMPLOYEE 50/50 SPLIT VIEW -->
     <div id="employeeView" class="employee-container" role="region" aria-label="Employee Dashboard and Chat">
       
-      <!-- LEFT PANEL (50%) - RESOURCES & INSIGHTS (WELLBEING DASHBOARD) -->
-      <section class="left-dashboard-panel" aria-label="Resources & Insights Dashboard">
+      <!-- LEFT PANEL (50%) - EMPLOYEE EXPERIENCE HUB -->
+      <section class="left-dashboard-panel" aria-label="Employee Experience Hub" style="display:flex; flex-direction:column; gap:24px; padding-right:8px; overflow-y:auto;">
         
-        <div class="panel-section-title-badge">
-          📊 Resources & Insights — Employee Wellbeing Dashboard
-        </div>
-
-        <!-- WELCOME SECTION -->
-        <div class="welcome-card">
-          <h1 class="welcome-title">Welcome to lis<span class="highlight-ten">ten</span>360</h1>
-          <p class="welcome-desc">
-            "A safe space where every concern is heard with empathy and confidentiality."
+        <!-- SECTION 1 — HERO -->
+        <div style="background: linear-gradient(135deg, #1F7A8C 0%, #155461 60%, #0F3842 100%); color:white; padding:22px; border-radius:18px; position:relative; overflow:hidden;">
+          <div style="font-size:1.4rem; font-weight:800; margin-bottom:4px;">👋 Good Afternoon, Jordan</div>
+          <div style="font-size:1rem; font-weight:700; color:#8ECDF0;">How can we support you today?</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.85); margin-top:6px;">
+            Speak up safely, seek confidential support, or explore trusted workplace resources.
           </p>
-        </div>
-
-        <!-- 3 ANIMATED METRICS CARDS -->
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-icon-box safety" aria-hidden="true">🛡️</div>
-            <div id="metricValSafety" class="metric-value">96.4%</div>
-            <div class="metric-label">Psychological Safety Score</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon-box time" aria-hidden="true">⚡</div>
-            <div id="metricValTime" class="metric-value">3.8 Days</div>
-            <div class="metric-label">Average Resolution Time</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon-box programs" aria-hidden="true">🌿</div>
-            <div id="metricValPrograms" class="metric-value">14</div>
-            <div class="metric-label">Active Wellbeing Programs</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; pt:12px; border-top:1px solid rgba(255,255,255,0.15); font-size:0.75rem; font-weight:600;">
+            <span style="background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:20px;">🔒 Confidential</span>
+            <span style="background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:20px;">🛡 Zero Retaliation</span>
+            <span style="background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:20px;">🤝 AI Support Available 24×7</span>
           </div>
         </div>
 
-        <!-- POLICY DOCUMENTS SECTION -->
+        <!-- SECTION 2 — MOOD CHECK-IN WITH INTEGRATED RECOMMENDATION PANEL -->
+        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:18px; display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <h2 style="font-size:0.92rem; font-weight:700; margin:0;">💙 How are you feeling today?</h2>
+              <button id="moodResetBtn" style="display:none; background:none; border:none; color:var(--text-muted); font-size:0.75rem; font-weight:600; cursor:pointer;" onclick="App.resetMood()">Reset</button>
+            </div>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">
+              Your response helps us personalize recommendations for you. This information is private and only improves your experience.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button class="mood-btn" onclick="App.selectMood('great')">😊 Great</button>
+              <button class="mood-btn" onclick="App.selectMood('okay')">🙂 Okay</button>
+              <button class="mood-btn" onclick="App.selectMood('stressed')">😐 Stressed</button>
+              <button class="mood-btn" onclick="App.selectMood('overwhelmed')">😟 Overwhelmed</button>
+              <button class="mood-btn" onclick="App.selectMood('need-support')">😢 Need Support</button>
+            </div>
+          </div>
+
+          <!-- INTEGRATED EXPANDABLE RECOMMENDATION PANEL -->
+          <div id="integratedRecommendationPanel" style="display:none; border-radius:16px; padding:16px; border:1px solid var(--border-color); transition: all 0.25s ease;">
+            <div id="recTimeGreeting" style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; margin-bottom:4px;"></div>
+
+            <div style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:0.9rem; margin-bottom:12px; border-bottom:1px solid rgba(0,0,0,0.08); padding-bottom:8px;">
+              <span id="recIcon" style="font-size:1.2rem;"></span>
+              <span id="recAckHeader" style="white-space:pre-line;"></span>
+            </div>
+
+            <div id="recTitle" style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; margin-top:8px; margin-bottom:4px;"></div>
+            
+            <p id="recText" style="font-size:0.8rem; line-height:1.55; margin:0 0 16px 0; white-space:pre-line; font-weight:500;"></p>
+
+            <div id="recBadges" style="display:none; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
+
+            <div style="display:flex; gap:16px;">
+              <button id="recPrimaryBtn" style="color:white; border:none; padding:10px 18px; border-radius:10px; font-weight:800; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('chatInput').focus()"></button>
+              <button id="recSecondaryBtn" style="background:white; color:#374151; border:1px solid #D1D5DB; padding:10px 16px; border-radius:10px; font-weight:800; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('chatInput').focus()"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4 — QUICK ACTIONS -->
         <div>
-          <div class="section-header">
-            <h2 class="section-title">📜 Policy Documents</h2>
-            <span style="font-size:0.72rem; color:var(--text-muted);">Updated 2026</span>
+          <h2 style="font-size:0.92rem; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:6px;">✨ Quick Actions</h2>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            
+            <div class="quick-action-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:1.4rem; margin-bottom:6px;">🗣️</div>
+                <div style="font-weight:700; font-size:0.88rem;">Report a Workplace Concern</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">Raise a workplace concern confidentially.</div>
+              </div>
+              <button style="margin-top:12px; background:#E63946; color:white; border:none; padding:8px 12px; border-radius:10px; font-weight:700; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('chatInput').focus()">Report Now ➤</button>
+            </div>
+
+            <div class="quick-action-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:1.4rem; margin-bottom:6px;">❤️</div>
+                <div style="font-weight:700; font-size:0.88rem;">Mental Wellbeing</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">Talk with the AI companion whenever you need support.</div>
+              </div>
+              <button style="margin-top:12px; background:#1F7A8C; color:white; border:none; padding:8px 12px; border-radius:10px; font-weight:700; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('chatInput').focus()">Start Conversation ➤</button>
+            </div>
+
+            <div class="quick-action-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:1.4rem; margin-bottom:6px;">📚</div>
+                <div style="font-weight:700; font-size:0.88rem;">Company Policies</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">Explore workplace policies, employee rights and guidance.</div>
+              </div>
+              <button style="margin-top:12px; background:#E8F5E9; color:#1F7A8C; border:1px solid var(--border-accent); padding:8px 12px; border-radius:10px; font-weight:700; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('policiesSection').scrollIntoView({behavior:'smooth'})">Browse Policies ➤</button>
+            </div>
+
+            <div class="quick-action-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:1.4rem; margin-bottom:6px;">📈</div>
+                <div style="font-weight:700; font-size:0.88rem;">Track My Report</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">View updates on your submitted reports.</div>
+              </div>
+              <button style="margin-top:12px; background:#E0F2FE; color:#1F7A8C; border:1px solid var(--border-accent); padding:8px 12px; border-radius:10px; font-weight:700; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.promptCaseTracking()">View Status ➤</button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SECTION 5 — YOUR PROTECTION -->
+        <div style="background:#F0F9FF; border:1px solid #BAE6FD; border-radius:18px; padding:18px;">
+          <h2 style="font-size:0.92rem; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:6px;">🛡️ Your Protection</h2>
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+            <div style="background:#E8F5E9; border:1px solid #A8D5BA; border-radius:14px; padding:12px;">
+              <div style="font-weight:700; font-size:0.8rem; color:#155461;">🔒 Confidential</div>
+              <div style="font-size:0.72rem; color:#4B5563; margin-top:4px;">Your identity and conversations are protected.</div>
+            </div>
+            <div style="background:#E0F2FE; border:1px solid #8ECDF0; border-radius:14px; padding:12px;">
+              <div style="font-weight:700; font-size:0.8rem; color:#155461;">🛡 Zero Retaliation</div>
+              <div style="font-size:0.72rem; color:#4B5563; margin-top:4px;">Employees are protected when raising concerns.</div>
+            </div>
+            <div style="background:#EEF2FF; border:1px solid #C7D2FE; border-radius:14px; padding:12px;">
+              <div style="font-weight:700; font-size:0.8rem; color:#155461;">🤝 Safe & Supportive</div>
+              <div style="font-size:0.72rem; color:#4B5563; margin-top:4px;">Every concern is handled with empathy and respect.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 6 — FEATURED POLICIES -->
+        <div id="policiesSection" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:18px;">
+          <div class="section-header" style="margin-bottom:12px;">
+            <h2 class="section-title">📜 Featured Policies</h2>
+            <span style="font-size:0.72rem; color:var(--text-muted);">Updated Recently</span>
           </div>
           <div id="policiesGrid" class="policies-grid">
             <!-- Rendered dynamically by app.js -->
           </div>
         </div>
 
-        <!-- LEARNING & WELLBEING SECTION -->
-        <div>
-          <div class="section-header">
-            <h2 class="section-title">🧠 Learning & Wellbeing</h2>
-            <span style="font-size:0.72rem; color:var(--primary-teal); font-weight:700; cursor:pointer;" onclick="WellbeingModule.triggerPathway()">Explore Support</span>
+        <!-- SECTION 7 — HELPFUL RESOURCES -->
+        <div style="background:#F2F7F7; border:1px solid var(--border-color); border-radius:18px; padding:18px;">
+          <div class="section-header" style="margin-bottom:12px;">
+            <h2 class="section-title">🧭 Helpful Resources</h2>
+            <span style="font-size:0.72rem; color:var(--text-muted);">Guides & Articles</span>
           </div>
           <div id="learningGrid" class="learning-grid">
             <!-- Rendered dynamically by app.js -->
@@ -335,6 +422,23 @@
     </div>
 
   </main>
+
+  <!-- WELLBEING TIPS MODAL -->
+  <div id="wellbeingModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:16px;">
+    <div style="background:white; border-radius:24px; max-width:500px; width:100%; padding:24px; border:1px solid #E2E8F0; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); display:flex; flex-direction:column; max-height:85vh;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #F1F5F9; padding-bottom:12px; margin-bottom:16px;">
+        <h3 id="modalTitle" style="font-size:1.05rem; font-weight:800; color:#0F172A; margin:0;"></h3>
+        <button onclick="App.closeTipsModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748B;">✕</button>
+      </div>
+
+      <div id="modalItems" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:55vh; padding-right:4px;"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #F1F5F9; pt:12px; margin-top:16px;">
+        <button onclick="App.closeTipsModal(); document.getElementById('chatInput').focus();" style="background:#1F7A8C; color:white; border:none; padding:10px 16px; border-radius:12px; font-weight:700; font-size:0.78rem; cursor:pointer;">🤖 Talk to AI</button>
+        <button onclick="App.closeTipsModal()" style="background:#F1F5F9; color:#475569; border:none; padding:10px 16px; border-radius:12px; font-weight:700; font-size:0.78rem; cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- GENERAL MODAL CONTAINER -->
   <div id="generalModal" class="modal-overlay" role="dialog" aria-modal="true">

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>listen360 | Psychological Safety & Employee Wellbeing Companion</title>
+  <meta name="description" content="listen360: Every Voice Matters. Every Concern Deserves to Be Heard. A safe, confidential AI-powered platform for reporting concerns and accessing wellbeing resources.">
+  <link rel="stylesheet" crossorigin href="/assets/index-CMQgIjex.css">
+</head>
+<body>
+
+  <!-- FLOATING ACCENT DECORATIONS -->
+  <div class="floating-bg-accent bg-blob-1" aria-hidden="true"></div>
+  <div class="floating-bg-accent bg-blob-2" aria-hidden="true"></div>
+
+  <!-- APP HEADER -->
+  <header class="app-header" role="banner">
+    <div class="brand-container" onclick="App.switchRole('employee')" tabindex="0" role="button" aria-label="listen360 Home">
+      <!-- Minimalist Vector Logo -->
+      <svg class="brand-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1F7A8C" />
+            <stop offset="100%" stop-color="#155461" />
+          </linearGradient>
+          <linearGradient id="sageGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A8D5BA" />
+            <stop offset="100%" stop-color="#8ECDF0" />
+          </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="44" stroke="url(#tealGrad)" stroke-width="7" stroke-dasharray="210 50" stroke-linecap="round" />
+        <path d="M 50 12 C 70 12 86 26 86 45 C 86 58 76 69 62 74 C 58 78 50 86 42 86 C 45 80 47 75 47 73 C 28 71 14 58 14 45 C 14 26 30 12 50 12 Z" fill="url(#sageGrad)" opacity="0.4" />
+        <circle cx="40" cy="40" r="7" fill="#1F7A8C" />
+        <path d="M 28 62 C 28 50 52 50 52 62" stroke="#1F7A8C" stroke-width="5" stroke-linecap="round" />
+        <circle cx="60" cy="38" r="7" fill="#8ECDF0" />
+        <path d="M 48 60 C 48 48 72 48 72 60" stroke="#8ECDF0" stroke-width="5" stroke-linecap="round" />
+      </svg>
+      <div class="brand-text-box">
+        <div class="brand-title">
+          lis<span class="highlight-ten">ten</span>360
+        </div>
+        <div class="brand-tagline">"Every Voice Matters. Every Concern Deserves to Be Heard."</div>
+      </div>
+    </div>
+
+    <nav aria-label="Main Navigation">
+      <ul class="nav-links" role="menubar">
+        <li class="nav-link active" role="menuitem" tabindex="0" onclick="App.switchRole('employee')">🏠 Home</li>
+        <li class="nav-link" role="menuitem" tabindex="0" onclick="App.openPolicyModal('speak-up')">📜 Policy Corner</li>
+        <li class="nav-link" role="menuitem" tabindex="0" onclick="WellbeingModule.openMHFAConnectModal()">🤝 Mental Health & Support</li>
+        <li class="nav-link" role="menuitem" tabindex="0" onclick="ChatEngine.promptCaseTracking()">🔎 Track My Report</li>
+      </ul>
+    </nav>
+
+    <div class="header-right">
+      <!-- Dark / Light Mode Switcher -->
+      <button class="theme-toggle-btn" onclick="App.toggleTheme()" aria-label="Toggle Light and Dark Mode" title="Toggle Theme">
+        🌙
+      </button>
+
+      <div class="role-switcher" role="radiogroup" aria-label="Portal Mode">
+        <button id="roleBtnEmployee" class="role-btn active" role="radio" aria-checked="true" onclick="App.switchRole('employee')">
+          👤 Employee View
+        </button>
+        <button id="roleBtnInvestigator" class="role-btn" role="radio" aria-checked="false" onclick="App.switchRole('investigator')">
+          🛡️ Investigator Portal
+        </button>
+      </div>
+
+      <div class="user-profile-badge" tabindex="0" role="button" aria-label="User Profile">
+        <div class="user-avatar">JS</div>
+        <span style="font-size:0.78rem; font-weight:700;">Jordan Smith</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN VIEW CONTAINER -->
+  <main class="main-view" role="main">
+
+    <!-- PART A & B: EMPLOYEE 50/50 SPLIT VIEW -->
+    <div id="employeeView" class="employee-container" role="region" aria-label="Employee Dashboard and Chat">
+      
+      <!-- LEFT PANEL (50%) - EMPLOYEE EXPERIENCE HUB -->
+      <section class="left-dashboard-panel" aria-label="Employee Experience Hub" style="display:flex; flex-direction:column; gap:24px; padding-right:8px; overflow-y:auto;">
+        
+        <!-- SECTION 1 — HERO -->
+        <div style="background: linear-gradient(135deg, #1F7A8C 0%, #155461 60%, #0F3842 100%); color:white; padding:22px; border-radius:18px; position:relative; overflow:hidden;">
+          <div style="font-size:1.4rem; font-weight:800; margin-bottom:4px;">👋 Good Afternoon, Jordan</div>
+          <div style="font-size:1rem; font-weight:700; color:#8ECDF0;">How can we support you today?</div>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.85); margin-top:6px;">
+            Speak up safely, seek confidential support, or explore trusted workplace resources.
+          </p>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; pt:12px; border-top:1px solid rgba(255,255,255,0.15); font-size:0.75rem; font-weight:600;">
+            <span style="background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:20px;">🔒 Confidential</span>
+            <span style="background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:20px;">🛡 Zero Retaliation</span>
+            <span style="background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:20px;">🤝 AI Support Available 24×7</span>
+          </div>
+        </div>
+
+        <!-- SECTION 2 — MOOD CHECK-IN WITH INTEGRATED RECOMMENDATION PANEL -->
+        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:18px; display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <h2 style="font-size:0.92rem; font-weight:700; margin:0;">💙 How are you feeling today?</h2>
+              <button id="moodResetBtn" style="display:none; background:none; border:none; color:var(--text-muted); font-size:0.75rem; font-weight:600; cursor:pointer;" onclick="App.resetMood()">Reset</button>
+            </div>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">
+              Your response helps us personalize recommendations for you. This information is private and only improves your experience.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button class="mood-btn" onclick="App.selectMood('great')">😊 Great</button>
+              <button class="mood-btn" onclick="App.selectMood('okay')">🙂 Okay</button>
+              <button class="mood-btn" onclick="App.selectMood('stressed')">😐 Stressed</button>
+              <button class="mood-btn" onclick="App.selectMood('overwhelmed')">😟 Overwhelmed</button>
+              <button class="mood-btn" onclick="App.selectMood('need-support')">😢 Need Support</button>
+            </div>
+          </div>
+
+          <!-- INTEGRATED EXPANDABLE RECOMMENDATION PANEL -->
+          <div id="integratedRecommendationPanel" style="display:none; border-radius:16px; padding:16px; border:1px solid var(--border-color); transition: all 0.25s ease;">
+            <div id="recTimeGreeting" style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; margin-bottom:4px;"></div>
+
+            <div style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:0.9rem; margin-bottom:12px; border-bottom:1px solid rgba(0,0,0,0.08); padding-bottom:8px;">
+              <span id="recIcon" style="font-size:1.2rem;"></span>
+              <span id="recAckHeader" style="white-space:pre-line;"></span>
+            </div>
+
+            <div id="recTitle" style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; margin-top:8px; margin-bottom:4px;"></div>
+            
+            <p id="recText" style="font-size:0.8rem; line-height:1.55; margin:0 0 16px 0; white-space:pre-line; font-weight:500;"></p>
+
+            <div id="recBadges" style="display:none; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
+
+            <div style="display:flex; gap:16px;">
+              <button id="recPrimaryBtn" style="color:white; border:none; padding:10px 18px; border-radius:10px; font-weight:800; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('chatInput').focus()"></button>
+              <button id="recSecondaryBtn" style="background:white; color:#374151; border:1px solid #D1D5DB; padding:10px 16px; border-radius:10px; font-weight:800; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('chatInput').focus()"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4 — QUICK ACTIONS -->
+        <div>
+          <h2 style="font-size:0.92rem; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:6px;">✨ Quick Actions</h2>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            
+            <div class="quick-action-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:1.4rem; margin-bottom:6px;">🗣️</div>
+                <div style="font-weight:700; font-size:0.88rem;">Report a Workplace Concern</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">Raise a workplace concern confidentially.</div>
+              </div>
+              <button style="margin-top:12px; background:#E63946; color:white; border:none; padding:8px 12px; border-radius:10px; font-weight:700; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('chatInput').focus()">Report Now ➤</button>
+            </div>
+
+            <div class="quick-action-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:1.4rem; margin-bottom:6px;">❤️</div>
+                <div style="font-weight:700; font-size:0.88rem;">Mental Wellbeing</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">Talk with the AI companion whenever you need support.</div>
+              </div>
+              <button style="margin-top:12px; background:#1F7A8C; color:white; border:none; padding:8px 12px; border-radius:10px; font-weight:700; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('chatInput').focus()">Start Conversation ➤</button>
+            </div>
+
+            <div class="quick-action-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:1.4rem; margin-bottom:6px;">📚</div>
+                <div style="font-weight:700; font-size:0.88rem;">Company Policies</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">Explore workplace policies, employee rights and guidance.</div>
+              </div>
+              <button style="margin-top:12px; background:#E8F5E9; color:#1F7A8C; border:1px solid var(--border-accent); padding:8px 12px; border-radius:10px; font-weight:700; font-size:0.78rem; cursor:pointer;" onclick="document.getElementById('policiesSection').scrollIntoView({behavior:'smooth'})">Browse Policies ➤</button>
+            </div>
+
+            <div class="quick-action-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:1.4rem; margin-bottom:6px;">📈</div>
+                <div style="font-weight:700; font-size:0.88rem;">Track My Report</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">View updates on your submitted reports.</div>
+              </div>
+              <button style="margin-top:12px; background:#E0F2FE; color:#1F7A8C; border:1px solid var(--border-accent); padding:8px 12px; border-radius:10px; font-weight:700; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.promptCaseTracking()">View Status ➤</button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SECTION 5 — YOUR PROTECTION -->
+        <div style="background:#F0F9FF; border:1px solid #BAE6FD; border-radius:18px; padding:18px;">
+          <h2 style="font-size:0.92rem; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:6px;">🛡️ Your Protection</h2>
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+            <div style="background:#E8F5E9; border:1px solid #A8D5BA; border-radius:14px; padding:12px;">
+              <div style="font-weight:700; font-size:0.8rem; color:#155461;">🔒 Confidential</div>
+              <div style="font-size:0.72rem; color:#4B5563; margin-top:4px;">Your identity and conversations are protected.</div>
+            </div>
+            <div style="background:#E0F2FE; border:1px solid #8ECDF0; border-radius:14px; padding:12px;">
+              <div style="font-weight:700; font-size:0.8rem; color:#155461;">🛡 Zero Retaliation</div>
+              <div style="font-size:0.72rem; color:#4B5563; margin-top:4px;">Employees are protected when raising concerns.</div>
+            </div>
+            <div style="background:#EEF2FF; border:1px solid #C7D2FE; border-radius:14px; padding:12px;">
+              <div style="font-weight:700; font-size:0.8rem; color:#155461;">🤝 Safe & Supportive</div>
+              <div style="font-size:0.72rem; color:#4B5563; margin-top:4px;">Every concern is handled with empathy and respect.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 6 — FEATURED POLICIES -->
+        <div id="policiesSection" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:18px;">
+          <div class="section-header" style="margin-bottom:12px;">
+            <h2 class="section-title">📜 Featured Policies</h2>
+            <span style="font-size:0.72rem; color:var(--text-muted);">Updated Recently</span>
+          </div>
+          <div id="policiesGrid" class="policies-grid">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+
+        <!-- SECTION 7 — HELPFUL RESOURCES -->
+        <div style="background:#F2F7F7; border:1px solid var(--border-color); border-radius:18px; padding:18px;">
+          <div class="section-header" style="margin-bottom:12px;">
+            <h2 class="section-title">🧭 Helpful Resources</h2>
+            <span style="font-size:0.72rem; color:var(--text-muted);">Guides & Articles</span>
+          </div>
+          <div id="learningGrid" class="learning-grid">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT PANEL (50%) - PREMIUM EMPATHETIC AI CHAT PANEL -->
+      <section class="right-chat-panel" aria-label="AI Psychological Safety Companion Chat Window">
+        
+        <div class="chat-header">
+          <div class="chat-bot-info">
+            <div class="chat-companion-avatar" aria-hidden="true">
+              <svg class="chat-companion-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" fill="none" />
+                <ellipse cx="36" cy="42" rx="5" ry="6" fill="#FFFFFF" />
+                <ellipse cx="64" cy="42" rx="5" ry="6" fill="#FFFFFF" />
+                <circle cx="37" cy="40" r="2" fill="#1F7A8C" />
+                <circle cx="65" cy="40" r="2" fill="#1F7A8C" />
+                <path d="M 32 60 C 40 74 60 74 68 60" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none" />
+                <circle cx="26" cy="52" r="5" fill="#FFAAA5" opacity="0.6" />
+                <circle cx="74" cy="52" r="5" fill="#FFAAA5" opacity="0.6" />
+              </svg>
+              <div class="online-dot"></div>
+            </div>
+            <div>
+              <div class="chat-bot-name">listen360 AI Companion</div>
+              <div class="chat-bot-status">● Empathetic & Active Listener</div>
+            </div>
+          </div>
+
+          <div class="confidential-shield-tag">
+            🔒 256-Bit Encrypted • Confidential & Secure
+          </div>
+        </div>
+
+        <!-- Live Voice Recording Banner Indicator -->
+        <div id="voiceStatusBox" class="voice-status-banner" style="display:none;" onclick="ChatEngine.toggleVoiceRecording()">
+          <!-- Populated by chat.js -->
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div id="chatMessages" class="chat-messages-container" role="log" aria-live="polite" aria-label="Chat Conversation">
+          <!-- Rendered dynamically by chat.js -->
+        </div>
+
+        <!-- Chat Input Footer Bar with Text, Voice, & Attachment Controls -->
+        <div class="chat-footer">
+          <button id="attachmentBtn" class="chat-tool-btn" title="Attach Document/Image" aria-label="Attach Document" onclick="ChatEngine.triggerFileUpload()">
+            📎
+          </button>
+
+          <button id="voiceRecordBtn" class="chat-tool-btn" title="Voice Recording Mode" aria-label="Toggle Voice Recording" onclick="ChatEngine.toggleVoiceRecording()">
+            🎙️
+          </button>
+
+          <input id="chatInput" type="text" class="chat-input" placeholder="Type or record your concern in your own words..." aria-label="Message Input" />
+          
+          <button class="send-btn" onclick="App.sendMessage()" title="Send Message" aria-label="Send Message">➤</button>
+        </div>
+
+      </section>
+
+    </div>
+
+
+    <!-- PART C: INVESTIGATOR & CASE MANAGER PORTAL -->
+    <div id="investigatorView" class="investigator-container" style="display: none;" role="region" aria-label="Investigator Portal">
+      
+      <div class="investigator-top-header">
+        <div>
+          <h1 class="inv-title">Case Intelligence & Analytics Dashboard</h1>
+          <p class="inv-subtitle">Real-time overview of reported workplace concerns, risk distributions, and case routing.</p>
+        </div>
+        <button class="action-btn-sm" style="padding:6px 14px; font-size:0.76rem;" onclick="DashboardModule.renderMetrics()">🔄 Refresh Live Feeds</button>
+      </div>
+
+      <!-- Top Executive Metrics Grid -->
+      <div id="invMetricsGrid" class="inv-metrics-grid">
+        <!-- Rendered dynamically by dashboard.js -->
+      </div>
+
+      <!-- AI Case Intelligence Assistant Panel -->
+      <div class="ai-intelligence-card">
+        <div class="ai-intel-header">
+          <div class="ai-intel-icon" aria-hidden="true">🤖</div>
+          <div>
+            <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-main);">AI Case Intelligence Assistant</h3>
+            <span style="font-size:0.72rem; color:var(--primary-teal); font-weight:600;">Ask natural language questions about overall case trends and risk analysis</span>
+          </div>
+        </div>
+
+        <div class="ai-prompts-chips">
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Give me a summary of cases received this month.')">
+            💬 "Summary of cases received this month"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('What are the top 3 emerging concerns?')">
+            💬 "Top 3 emerging concerns"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Show me cases related to manager behaviour.')">
+            💬 "Manager behaviour cases"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Which categories have increased the most this quarter?')">
+            💬 "Quarterly category increases"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Summarise all high-risk cases.')">
+            💬 "Summarise high-risk cases"
+          </div>
+          <div class="prompt-chip" tabindex="0" onclick="AiIntelligence.processQuery('Which cases are approaching SLA breach?')">
+            💬 "Cases approaching SLA breach"
+          </div>
+        </div>
+
+        <div class="ai-query-bar">
+          <input id="aiIntelInput" type="text" class="ai-query-input" placeholder="Type a question for AI case insights..." aria-label="AI Query Input" onkeypress="if(event.key==='Enter') AiIntelligence.processQuery(this.value)" />
+          <button class="action-btn-sm" style="padding:0 14px;" onclick="AiIntelligence.processQuery(document.getElementById('aiIntelInput').value)">Ask AI</button>
+        </div>
+
+        <div id="aiIntelResponseBox" class="ai-response-box"></div>
+      </div>
+
+      <!-- Visual Analytics Grid -->
+      <div class="analytics-grid">
+        <div class="chart-card">
+          <div class="chart-card-title">
+            <span>📈 Case Volume Trend Over Time</span>
+            <span style="font-size:0.7rem; color:var(--text-muted);">2026 YTD</span>
+          </div>
+          <div class="chart-canvas-box">
+            <canvas id="volumeChartCanvas" aria-label="Case Volume Chart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-title">
+            <span>🍩 Category Distribution</span>
+            <span style="font-size:0.7rem; color:var(--text-muted);">All Active Records</span>
+          </div>
+          <div class="chart-canvas-box">
+            <canvas id="categoryChartCanvas" aria-label="Category Distribution Chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filterable Cases Table -->
+      <div class="table-card">
+        <div class="table-filters-bar">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-main);">Active Case Repository</h3>
+            <div class="search-input-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" placeholder="Search case ID, keyword..." aria-label="Search Cases" onkeyup="DashboardModule.handleSearch(this.value)" />
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px;">
+            <select class="filter-select" aria-label="Filter by Category" onchange="DashboardModule.filterCategory(this.value)">
+              <option value="all">All Categories</option>
+              <option value="Bullying">Bullying / Harassment</option>
+              <option value="Ethics">Ethics / Conduct</option>
+              <option value="Well-being">Well-being / Mental Health</option>
+              <option value="Retaliation">Retaliation</option>
+              <option value="Workplace Behaviour">Workplace Behaviour</option>
+            </select>
+
+            <select class="filter-select" aria-label="Filter by Risk" onchange="DashboardModule.filterRisk(this.value)">
+              <option value="all">All Risk Levels</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="moderate">Moderate</option>
+              <option value="low">Low</option>
+            </select>
+
+            <select class="filter-select" aria-label="Filter by Status" onchange="DashboardModule.filterStatus(this.value)">
+              <option value="all">All Statuses</option>
+              <option value="submitted">Submitted</option>
+              <option value="under initial review">Under Initial Review</option>
+              <option value="under investigation">Under Investigation</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <table class="cases-table" aria-label="Cases List">
+          <thead>
+            <tr>
+              <th>Case ID</th>
+              <th>Category</th>
+              <th>Risk Level</th>
+              <th>Age</th>
+              <th>Status</th>
+              <th>Assigned Owner</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="casesTableBody">
+            <!-- Rendered dynamically by dashboard.js -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- WELLBEING TIPS MODAL -->
+  <div id="wellbeingModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:16px;">
+    <div style="background:white; border-radius:24px; max-width:500px; width:100%; padding:24px; border:1px solid #E2E8F0; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); display:flex; flex-direction:column; max-height:85vh;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #F1F5F9; padding-bottom:12px; margin-bottom:16px;">
+        <h3 id="modalTitle" style="font-size:1.05rem; font-weight:800; color:#0F172A; margin:0;"></h3>
+        <button onclick="App.closeTipsModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748B;">✕</button>
+      </div>
+
+      <div id="modalItems" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:55vh; padding-right:4px;"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #F1F5F9; pt:12px; margin-top:16px;">
+        <button onclick="App.closeTipsModal(); document.getElementById('chatInput').focus();" style="background:#1F7A8C; color:white; border:none; padding:10px 16px; border-radius:12px; font-weight:700; font-size:0.78rem; cursor:pointer;">🤖 Talk to AI</button>
+        <button onclick="App.closeTipsModal()" style="background:#F1F5F9; color:#475569; border:none; padding:10px 16px; border-radius:12px; font-weight:700; font-size:0.78rem; cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERAL MODAL CONTAINER -->
+  <div id="generalModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div id="modalInnerContent" class="modal-content">
+      <!-- Modal contents injected dynamically -->
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LIBRARIES & MODULES -->
+  <script src="js/data.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/wellbeing.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/ai-intelligence.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

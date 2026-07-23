@@ -12,6 +12,185 @@ const App = {
     this.setupEventListeners();
   },
 
+  getTimeBasedGreeting(name = "Jordan") {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return `☀️ Good Morning, ${name}`;
+    if (hour >= 12 && hour < 17) return `🌤️ Good Afternoon, ${name}`;
+    if (hour >= 17 && hour < 21) return `🌆 Good Evening, ${name}`;
+    return `🌙 Good Evening, ${name}`;
+  },
+
+  openTipsModal(type) {
+    const modal = document.getElementById('wellbeingModal');
+    const titleEl = document.getElementById('modalTitle');
+    const listEl = document.getElementById('modalItems');
+    if (!modal) return;
+
+    const data = {
+      wellbeing: {
+        title: "🌿 Positive Wellbeing & Healthy Habits",
+        items: [
+          "🌟 Gratitude Practice: Take 30 seconds to send a quick thank-you note to a teammate.",
+          "💧 Hydration & Reset: Drink a full glass of water and take a 5-minute walking breather.",
+          "🎯 Energy Pacing: Use high-energy windows for your most important creative priorities.",
+          "🧘 Mindful Transition: Pause for 3 deep breaths between meetings to refresh clarity.",
+          "🌱 Work-Life Boundaries: Set a clear log-off time to safeguard your evening personal time.",
+          "🤝 Positive Connections: Take 5 minutes to have an informal check-in with a colleague."
+        ]
+      },
+      productivity: {
+        title: "⚡ Productivity Tips",
+        items: [
+          "🎯 Plan your three most important tasks first.",
+          "⏰ Try the Pomodoro technique (25 minutes work, 5 minutes break).",
+          "📴 Turn off unnecessary notifications.",
+          "🚶 Take a two-minute stretch every hour.",
+          "📝 Finish one task before starting another.",
+          "💧 Stay hydrated throughout the day.",
+          "📅 Block focus time on your calendar.",
+          "📧 Avoid checking email continuously."
+        ]
+      },
+      stress: {
+        title: "🧘 Quick Stress Management Techniques",
+        items: [
+          "🌬 Take five slow deep breaths.",
+          "🧘 Try a two-minute mindfulness exercise.",
+          "🚶 Walk away from your desk for five minutes.",
+          "💧 Drink a glass of water.",
+          "🎵 Listen to calming music.",
+          "📵 Step away from notifications for a few minutes.",
+          "🤖 If you're still feeling stressed, talk to your confidential AI Companion."
+        ]
+      },
+      support: {
+        title: "🤝 Workplace Support Resources",
+        items: [
+          "📚 Managing Workload & Priorities Guide",
+          "❤️ Employee Wellbeing & Mental Health Guide",
+          "🧘 Mental Health Resources",
+          "📞 Employee Assistance Program (EAP) Hotline",
+          "📖 Time Management Guide",
+          "🎥 Short Wellbeing Videos",
+          "💡 Tips for Managing Burnout"
+        ]
+      }
+    };
+
+    const content = data[type] || data.productivity;
+    titleEl.innerText = content.title;
+    listEl.innerHTML = content.items.map(item => `<div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px 14px; border-radius:12px; font-size:0.8rem; font-weight:600; color:#1E293B;">${item}</div>`).join('');
+    modal.style.display = 'flex';
+  },
+
+  closeTipsModal() {
+    const modal = document.getElementById('wellbeingModal');
+    if (modal) modal.style.display = 'none';
+  },
+
+  selectMood(mood) {
+    const recData = {
+      great: {
+        ackHeader: "It's great to see you're having a positive day.",
+        title: "Today's Wellbeing Reminder",
+        text: "Positive days are a great opportunity to build healthy habits that support your long-term wellbeing. Take a few moments to acknowledge your progress, stay hydrated, and maintain a healthy balance throughout your day.",
+        pBtn: "🤖 Talk to AI", sBtn: "🌿 Explore Wellbeing Tips", icon: "☀️",
+        bg: "#ECFDF5", border: "#A7F3D0", btnBg: "#059669", actionType: "modal", modalType: "wellbeing"
+      },
+      okay: {
+        ackHeader: "😊 Thanks for checking in.",
+        title: "Productivity Guidance",
+        text: "Here are a few productivity tips to help you have a focused day.",
+        pBtn: "View Productivity Tips ⚡", sBtn: "🤖 Talk to AI", icon: "😊",
+        bg: "#F0F9FF", border: "#BAE6FD", btnBg: "#0284C7", actionType: "modal", modalType: "productivity"
+      },
+      stressed: {
+        ackHeader: "❤️ Thanks for letting us know.",
+        title: "Stress Relief Techniques",
+        text: "Here are some quick stress management techniques that may help.",
+        pBtn: "Stress Management Tips 🧘", sBtn: "🤖 Talk to AI", icon: "❤️",
+        bg: "#FFFBEB", border: "#FDE68A", btnBg: "#D97706", actionType: "modal", modalType: "stress"
+      },
+      overwhelmed: {
+        ackHeader: "🤝 You're not alone.",
+        title: "Step-by-Step Support",
+        text: "Let's focus on one step at a time. Explore our official workplace policies below or connect confidentially with your AI Companion.",
+        pBtn: "🤖 Talk to AI", sBtn: "📚 View Featured Policies", icon: "🤝",
+        bg: "#FAF5FF", border: "#E9D5FF", btnBg: "#9333EA", actionType: "chat"
+      },
+      'need-support': {
+        ackHeader: "💙 Thank you for trusting us.",
+        title: "Your Wellbeing Matters",
+        text: "You are not alone.\n\nOur confidential AI Companion is available whenever you need someone to listen.",
+        badges: ["🔒 Confidential", "❤️ Judgment-Free", "🤝 Available Anytime"],
+        pBtn: "🤖 Talk to AI", icon: "💙",
+        bg: "#EEF2FF", border: "#C7D2FE", btnBg: "#4F46E5", actionType: "chat"
+      }
+    };
+
+    const data = recData[mood];
+    if (!data) return;
+
+    const panel = document.getElementById('integratedRecommendationPanel');
+    const resetBtn = document.getElementById('moodResetBtn');
+
+    if (panel) {
+      panel.style.opacity = '0';
+      panel.style.transform = 'translateY(6px)';
+      panel.style.display = 'block';
+      if (resetBtn) resetBtn.style.display = 'block';
+
+      setTimeout(() => {
+        panel.style.backgroundColor = data.bg;
+        panel.style.borderColor = data.border;
+
+        const greeting = this.getTimeBasedGreeting("Jordan");
+        if (document.getElementById('recTimeGreeting')) {
+          document.getElementById('recTimeGreeting').innerText = greeting;
+        }
+
+        document.getElementById('recIcon').innerText = data.icon;
+        document.getElementById('recAckHeader').innerText = data.ackHeader;
+        document.getElementById('recTitle').innerText = data.title;
+        document.getElementById('recText').innerText = data.text;
+
+        const badgesEl = document.getElementById('recBadges');
+        if (data.badges) {
+          badgesEl.innerHTML = data.badges.map(b => `<span style="background:white; border:1px solid rgba(0,0,0,0.1); padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">${b}</span>`).join('');
+          badgesEl.style.display = 'flex';
+        } else {
+          badgesEl.style.display = 'none';
+        }
+
+        const pBtn = document.getElementById('recPrimaryBtn');
+        pBtn.innerText = data.pBtn;
+        pBtn.style.backgroundColor = data.btnBg;
+        pBtn.onclick = () => document.getElementById('chatInput').focus();
+
+        const sBtn = document.getElementById('recSecondaryBtn');
+        if (data.sBtn) {
+          sBtn.innerText = data.sBtn;
+          sBtn.style.display = 'inline-block';
+          if (mood === 'great') {
+            sBtn.onclick = () => this.openTipsModal('wellbeing');
+          } else if (mood === 'overwhelmed') {
+            sBtn.onclick = () => {
+              const sec = document.getElementById('policiesSection') || document.querySelector('.policy-card');
+              if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+            };
+          } else {
+            sBtn.onclick = () => document.getElementById('chatInput').focus();
+          }
+        } else {
+          sBtn.style.display = 'none';
+        }
+
+        panel.style.opacity = '1';
+        panel.style.transform = 'translateY(0)';
+      }, 150);
+    }
+  },
+
   animateMetrics() {
     // Count-up animation for 3 metrics cards
     const animateVal = (id, start, end, duration, suffix = "") => {

@@ -211,9 +211,9 @@ const App = {
     };
 
     setTimeout(() => {
-      animateVal("metricValSafety", 0, 96.4, 1400, "%");
-      animateVal("metricValTime", 0, 3.8, 1000, " Days");
       animateVal("metricValPrograms", 0, 14, 800, " Programs");
+      animateVal("metricValConfidential", 0, 100, 1000, "%");
+      animateVal("metricValContacts", 0, 12, 1200, " On-Call");
     }, 200);
   },
 
@@ -352,6 +352,17 @@ const App = {
     `;
 
     modal.classList.add("active");
+  },
+
+  scrollToLearningSection() {
+    const el = document.getElementById("learningWellbeingSection");
+    const container = document.querySelector(".left-dashboard-panel");
+    if (el && container) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.add("highlight-pulse");
+      setTimeout(() => el.classList.remove("highlight-pulse"), 3000);
+    }
+    this.openLearningModal('mental-health');
   },
 
   setupEventListeners() {

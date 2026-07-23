@@ -421,9 +421,9 @@ nav {
   font-size: 1rem;
 }
 
-.metric-icon-box.safety { background: rgba(45, 106, 79, 0.12); color: var(--color-success); }
-.metric-icon-box.time { background: rgba(217, 119, 6, 0.12); color: var(--color-warning); }
 .metric-icon-box.programs { background: rgba(168, 213, 186, 0.25); color: var(--primary-teal); }
+.metric-icon-box.confidential { background: rgba(31, 122, 140, 0.12); color: var(--primary-teal); }
+.metric-icon-box.mhfa { background: rgba(142, 205, 240, 0.25); color: var(--primary-teal-dark); }
 
 .metric-value {
   font-family: var(--font-heading);
@@ -711,6 +711,18 @@ nav {
   50% { opacity: 0.7; }
 }
 
+.highlight-pulse {
+  animation: pulseGlow 1s ease-in-out 3;
+  border-radius: 8px;
+  background: rgba(31, 122, 140, 0.15) !important;
+  padding: 4px 8px;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(31, 122, 140, 0.7); }
+  50% { box-shadow: 0 0 15px 4px rgba(31, 122, 140, 0.8); }
+}
+
 /* CHAT MESSAGES CONTAINER */
 .chat-messages-container {
   flex: 1;
@@ -992,3 +1004,57 @@ nav {
 .modal-close-btn { position: absolute; top: 16px; right: 16px; background: rgba(31, 122, 140, 0.08); border: 1px solid var(--border-color); color: var(--text-muted); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.95rem; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* FORMAL REPORTING FLOW STEPPER & STYLES */
+.formal-stepper-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.stepper-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.stepper-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 24px;
+  bottom: -10px;
+  width: 2px;
+  background: var(--border-accent);
+}
+
+.stepper-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary-teal);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+  box-shadow: 0 0 0 3px var(--bg-card);
+}
+
+.stepper-content strong {
+  font-size: 0.82rem;
+  color: var(--text-main);
+  display: block;
+}
+
+.stepper-content p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  margin-top: 2px;
+}

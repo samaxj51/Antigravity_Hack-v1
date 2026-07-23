@@ -424,7 +424,7 @@ const ChatEngine = {
               <div style="background:rgba(31, 122, 140, 0.06); border:1px solid var(--border-accent); padding:10px; border-radius:8px;">
                 <strong style="color:var(--primary-teal); font-size:0.8rem;">Path B: Formal Reporting</strong>
                 <p style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">Submit confidential report to Ombudsperson regarding workplace factors.</p>
-                <button class="policy-btn" style="margin-top:6px;" onclick="ChatEngine.startFormalReportingFlow()">Submit Confidential Case</button>
+                <button class="policy-btn" style="margin-top:6px;" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
               </div>
             </div>
           </div>

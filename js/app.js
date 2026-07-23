@@ -1,15 +1,104 @@
 /* LISTEN360 MAIN APPLICATION CONTROLLER */
 
 const App = {
-  currentRole: "employee", // "employee" or "investigator"
+  token: null,
+  user: null,
+  currentRole: "employee",
   theme: "light",
 
   init() {
+    // Check if token exists in localStorage
+    const savedToken = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (!savedToken || !savedUser) {
+      document.getElementById("ssoLoginOverlay").style.display = "flex";
+      return;
+    }
+
+    this.token = savedToken;
+    this.user = JSON.parse(savedUser);
+    
+    // Hide SSO screen
+    document.getElementById("ssoLoginOverlay").style.display = "none";
+    document.getElementById("mockIdpModal").style.display = "none";
+
+    // Update user profile UI
+    this.updateUserProfileUI();
+
+    // Initialize modules
     this.renderLeftDashboard();
     this.animateMetrics();
     ChatEngine.init();
     DashboardModule.init();
     this.setupEventListeners();
+  },
+
+  updateUserProfileUI() {
+    const avatar = document.querySelector(".user-avatar");
+    const nameSpan = document.querySelector(".user-profile-badge span");
+    const roleSwitcher = document.querySelector(".role-switcher");
+
+    if (this.user) {
+      if (avatar) avatar.innerText = this.user.role === "investigator" ? "AR" : "JS";
+      if (nameSpan) nameSpan.innerText = this.user.role === "investigator" ? "Alex Rogers" : "Jordan Smith";
+
+      // If employee, disable/hide Investigator Switcher for demonstration, or restrict role switching
+      if (roleSwitcher) {
+        if (this.user.role === "employee") {
+          this.switchRole("employee");
+          document.getElementById("roleBtnInvestigator").style.opacity = "0.5";
+          document.getElementById("roleBtnInvestigator").style.cursor = "not-allowed";
+          document.getElementById("roleBtnInvestigator").title = "Access Restricted: Requires Investigator SSO login";
+        } else {
+          this.switchRole("investigator");
+          document.getElementById("roleBtnInvestigator").style.opacity = "1";
+          document.getElementById("roleBtnInvestigator").style.cursor = "pointer";
+        }
+      }
+    }
+  },
+
+  startSSO() {
+    const ssoOverlay = document.getElementById("ssoLoginOverlay");
+    const idpOverlay = document.getElementById("mockIdpModal");
+    
+    ssoOverlay.style.display = "none";
+    idpOverlay.style.display = "flex";
+  },
+
+  async completeSSO(persona) {
+    try {
+      const response = await fetch("/api/auth/sso-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ persona })
+      });
+      const data = await response.json();
+      
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        this.init();
+      } else {
+        alert("SSO authentication failed");
+      }
+    } catch (err) {
+      console.error("SSO Error:", err);
+      // Local fallback for offline/development if server is not running
+      const dummyUser = persona === "investigator" ? { name: "Alex Rogers", role: "investigator" } : { name: "Jordan Smith", role: "employee" };
+      localStorage.setItem("token", "dummy-jwt-token");
+      localStorage.setItem("user", JSON.stringify(dummyUser));
+      this.init();
+    }
+  },
+
+  logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    this.token = null;
+    this.user = null;
+    document.getElementById("ssoLoginOverlay").style.display = "flex";
   },
 
   animateMetrics() {
@@ -195,6 +284,8 @@ const App = {
     }
   }
 };
+
+window.App = App;
 
 window.onload = () => {
   App.init();

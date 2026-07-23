@@ -1,22 +1,31 @@
-/* LISTEN360 INVESTIGATOR DASHBOARD & ANALYTICS */
-
 const DashboardModule = {
   activeFilterCategory: "all",
   activeFilterRisk: "all",
   activeFilterStatus: "all",
   searchTerm: "",
+  cases: [],
 
-  init() {
+  async init() {
+    try {
+      const response = await fetch("/api/reports", {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      this.cases = await response.json();
+    } catch (err) {
+      console.error("Failed to fetch reports:", err);
+      this.cases = INITIAL_SAMPLE_CASES;
+    }
+
     this.renderMetrics();
     this.renderCharts();
     this.renderCasesTable();
   },
 
   renderMetrics() {
-    const totalCases = INITIAL_SAMPLE_CASES.length;
-    const newCases = INITIAL_SAMPLE_CASES.filter(c => c.status === "Submitted" || c.status === "New").length;
-    const highRisk = INITIAL_SAMPLE_CASES.filter(c => c.risk === "High" || c.risk === "Critical").length;
-    const anonRatio = Math.round((INITIAL_SAMPLE_CASES.filter(c => c.anonymous).length / totalCases) * 100);
+    const totalCases = this.cases.length;
+    const newCases = this.cases.filter(c => c.status === "Submitted" || c.status === "New" || c.status === "Pending").length;
+    const highRisk = this.cases.filter(c => c.risk === "High" || c.risk === "Critical").length;
+    const anonRatio = totalCases > 0 ? Math.round((this.cases.filter(c => c.anonymous || c.reporter === "Anonymous").length / totalCases) * 100) : 0;
 
     const container = document.getElementById("invMetricsGrid");
     if (!container) return;
@@ -28,7 +37,7 @@ const DashboardModule = {
       </div>
       <div class="inv-metric-card">
         <div class="inv-metric-num" style="color:var(--primary-teal);">${newCases}</div>
-        <div class="inv-metric-lbl">New This Week</div>
+        <div class="inv-metric-lbl">New/Pending</div>
       </div>
       <div class="inv-metric-card">
         <div class="inv-metric-num" style="color:var(--color-critical);">${highRisk}</div>
@@ -178,28 +187,33 @@ const DashboardModule = {
     const tbody = document.getElementById("casesTableBody");
     if (!tbody) return;
 
-    let filtered = INITIAL_SAMPLE_CASES.filter(c => {
+    let filtered = this.cases.filter(c => {
       if (this.activeFilterCategory !== "all" && !c.category.includes(this.activeFilterCategory)) return false;
       if (this.activeFilterRisk !== "all" && c.risk.toLowerCase() !== this.activeFilterRisk.toLowerCase()) return false;
       if (this.activeFilterStatus !== "all" && c.status.toLowerCase() !== this.activeFilterStatus.toLowerCase()) return false;
       if (this.searchTerm) {
         const term = this.searchTerm.toLowerCase();
-        return c.id.toLowerCase().includes(term) || c.category.toLowerCase().includes(term) || c.narrative.toLowerCase().includes(term);
+        const desc = c.description || c.narrative || "";
+        return c.id.toLowerCase().includes(term) || c.category.toLowerCase().includes(term) || desc.toLowerCase().includes(term);
       }
       return true;
     });
 
-    tbody.innerHTML = filtered.map(c => `
-      <tr tabindex="0" onclick="DashboardModule.openCaseDetails('${c.id}')" onkeypress="if(event.key==='Enter') DashboardModule.openCaseDetails('${c.id}')">
-        <td><strong>${c.id}</strong></td>
-        <td>${c.category}</td>
-        <td><span class="risk-badge ${c.risk.toLowerCase()}">${c.risk}</span></td>
-        <td>${c.age}</td>
-        <td><span class="status-badge ${c.status.toLowerCase().includes('investigation') ? 'investigation' : c.status.toLowerCase().includes('resolved') ? 'resolved' : 'new'}">${c.status}</span></td>
-        <td>${c.anonymous ? '🔒 Anonymous' : '👤 ' + c.owner}</td>
-        <td><button class="action-btn-sm" aria-label="View case ${c.id}">View & Manage</button></td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = filtered.map(c => {
+      const ageInDays = c.date ? Math.max(0, Math.round((Date.now() - new Date(c.date)) / (1000 * 60 * 60 * 24))) : 0;
+      const ageStr = ageInDays + " Days";
+      return `
+        <tr tabindex="0" onclick="DashboardModule.openCaseDetails('${c.id}')" onkeypress="if(event.key==='Enter') DashboardModule.openCaseDetails('${c.id}')">
+          <td><strong>${c.id}</strong></td>
+          <td>${c.category}</td>
+          <td><span class="risk-badge ${c.risk.toLowerCase()}">${c.risk}</span></td>
+          <td>${ageStr}</td>
+          <td><span class="status-badge ${c.status.toLowerCase().includes('investigation') ? 'investigation' : c.status.toLowerCase().includes('resolved') ? 'resolved' : 'new'}">${c.status}</span></td>
+          <td>${c.anonymous || c.reporter === 'Anonymous' ? '🔒 Anonymous' : '👤 ' + (c.assigned || 'Unassigned')}</td>
+          <td><button class="action-btn-sm" aria-label="View case ${c.id}">View & Manage</button></td>
+        </tr>
+      `;
+    }).join('');
   },
 
   filterCategory(val) {
@@ -223,19 +237,27 @@ const DashboardModule = {
   },
 
   openCaseDetails(caseId) {
-    const item = INITIAL_SAMPLE_CASES.find(c => c.id === caseId);
+    const item = this.cases.find(c => c.id === caseId);
     if (!item) return;
 
     const modal = document.getElementById("generalModal");
     const content = document.getElementById("modalInnerContent");
     if (!modal || !content) return;
 
+    const narrative = item.description || item.narrative || "No statement details provided.";
+    const aiSummary = item.aiSummary || `AI triaged: Classified as ${item.risk} risk in the ${item.department || 'General'} department.`;
+    const timeline = item.timeline || [
+      { date: new Date(item.date || Date.now()).toLocaleDateString(), title: "Case Created", desc: "Report received via secure portal." },
+      { date: new Date(item.date || Date.now()).toLocaleDateString(), title: "Triaged", desc: `Automatic classification: ${item.risk} risk.` }
+    ];
+    const assignedName = item.assigned || item.owner || "Unassigned";
+
     content.innerHTML = `
       <button class="modal-close-btn" aria-label="Close Modal" onclick="WellbeingModule.closeModal()">✕</button>
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
         <div>
           <h3 class="modal-title">${item.id}</h3>
-          <span style="font-size:0.8rem; color:var(--text-muted);">Submitted on ${item.date} • ${item.anonymous ? '🔒 Anonymous Reporter' : '👤 Identified'}</span>
+          <span style="font-size:0.8rem; color:var(--text-muted);">Submitted on ${new Date(item.date || Date.now()).toLocaleDateString()} • ${item.anonymous || item.reporter === 'Anonymous' ? '🔒 Anonymous Reporter' : '👤 Identified'}</span>
         </div>
         <span class="risk-badge ${item.risk.toLowerCase()}">${item.risk} Risk</span>
       </div>
@@ -243,12 +265,12 @@ const DashboardModule = {
       <div style="display:flex; flex-direction:column; gap:16px; margin-top:14px;">
         <div style="background:rgba(31, 122, 140, 0.04); border:1px solid var(--border-color); padding:14px; border-radius:10px;">
           <h4 style="color:var(--primary-teal); margin-bottom:4px;">Employee Statement</h4>
-          <p style="font-size:0.88rem; color:var(--text-main);">"${item.narrative}"</p>
+          <p style="font-size:0.88rem; color:var(--text-main);">"${narrative}"</p>
         </div>
 
         <div style="background:rgba(168, 213, 186, 0.15); border:1px solid var(--border-accent); padding:14px; border-radius:10px;">
           <h4 style="color:var(--primary-teal); margin-bottom:4px;">AI-Generated Case Summary</h4>
-          <p style="font-size:0.88rem; color:var(--text-main);">${item.aiSummary}</p>
+          <p style="font-size:0.88rem; color:var(--text-main);">${aiSummary}</p>
         </div>
 
         <div style="background:var(--bg-card); border:1px solid var(--border-accent); padding:14px; border-radius:10px;">
@@ -258,11 +280,11 @@ const DashboardModule = {
           </p>
           <div style="display:flex; gap:10px;">
             <select id="caseRoutingSelect" class="filter-select" aria-label="Select Owner" style="flex:1;">
-              <option ${item.owner.includes('Investigator A') ? 'selected' : ''}>Investigator A (Ethics Team)</option>
-              <option ${item.owner.includes('Compliance') ? 'selected' : ''}>Investigator B (Compliance)</option>
-              <option ${item.owner.includes('HR') ? 'selected' : ''}>HR Business Partner</option>
-              <option ${item.owner.includes('Legal') ? 'selected' : ''}>Legal & Employee Relations</option>
-              <option ${item.owner.includes('MHFA') ? 'selected' : ''}>MHFA / Well-being Team</option>
+              <option ${assignedName.includes('Ethics') || assignedName.includes('Investigator A') ? 'selected' : ''}>Investigator A (Ethics Team)</option>
+              <option ${assignedName.includes('Compliance') ? 'selected' : ''}>Investigator B (Compliance)</option>
+              <option ${assignedName.includes('HR') ? 'selected' : ''}>HR Business Partner</option>
+              <option ${assignedName.includes('Legal') ? 'selected' : ''}>Legal & Employee Relations</option>
+              <option ${assignedName.includes('MHFA') ? 'selected' : ''}>MHFA / Well-being Team</option>
             </select>
             <button class="action-btn-sm" onclick="DashboardModule.updateCaseOwner('${item.id}')">Reassign Case</button>
           </div>
@@ -271,7 +293,7 @@ const DashboardModule = {
         <div>
           <h4 style="color:var(--text-main); margin-bottom:8px;">Timeline & Investigation Activity</h4>
           <div style="display:flex; flex-direction:column; gap:8px; font-size:0.82rem; border-left:2px solid var(--border-accent); padding-left:12px;">
-            ${item.timeline.map(t => `
+            ${timeline.map(t => `
               <div>
                 <strong style="color:var(--primary-teal);">${t.date}</strong> — <strong>${t.title}:</strong> ${t.desc}
               </div>
@@ -293,9 +315,14 @@ const DashboardModule = {
     const sel = document.getElementById("caseRoutingSelect");
     if (!sel) return;
     const newOwner = sel.value;
-    const item = INITIAL_SAMPLE_CASES.find(c => c.id === caseId);
+    const item = this.cases.find(c => c.id === caseId);
     if (item) {
-      item.owner = newOwner;
+      item.assigned = newOwner;
+      if (!item.timeline) {
+        item.timeline = [
+          { date: new Date(item.date).toLocaleDateString(), title: "Case Created", desc: "Report received via secure portal." }
+        ];
+      }
       item.timeline.push({
         date: new Date().toLocaleString(),
         title: "Owner Reassigned",
@@ -310,8 +337,13 @@ const DashboardModule = {
   addNotePrompt(caseId) {
     const note = prompt("Enter investigator note:");
     if (note) {
-      const item = INITIAL_SAMPLE_CASES.find(c => c.id === caseId);
+      const item = this.cases.find(c => c.id === caseId);
       if (item) {
+        if (!item.timeline) {
+          item.timeline = [
+            { date: new Date(item.date).toLocaleDateString(), title: "Case Created", desc: "Report received via secure portal." }
+          ];
+        }
         item.timeline.push({
           date: new Date().toLocaleString(),
           title: "Investigator Note",
@@ -323,9 +355,14 @@ const DashboardModule = {
   },
 
   resolveCase(caseId) {
-    const item = INITIAL_SAMPLE_CASES.find(c => c.id === caseId);
+    const item = this.cases.find(c => c.id === caseId);
     if (item) {
       item.status = "Resolved";
+      if (!item.timeline) {
+        item.timeline = [
+          { date: new Date(item.date).toLocaleDateString(), title: "Case Created", desc: "Report received via secure portal." }
+        ];
+      }
       item.timeline.push({
         date: new Date().toLocaleString(),
         title: "Case Resolved & Closed",
@@ -338,3 +375,6 @@ const DashboardModule = {
     }
   }
 };
+
+window.DashboardModule = DashboardModule;
+

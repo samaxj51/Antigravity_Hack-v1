@@ -190,11 +190,11 @@ const ChatEngine = {
     if (!text.trim()) return;
 
     const lower = text.toLowerCase();
-    if (this.mode === "standard" && (lower.includes("mental") || lower.includes("stress") || lower.includes("burnout") || lower.includes("anxiety") || lower.includes("depress"))) {
+    if (this.mode === "standard" && this.step === 0 && (lower.includes("mental") || lower.includes("stress") || lower.includes("burnout") || lower.includes("anxiety") || lower.includes("depress"))) {
       this.startMentalHealthAssessment();
       return;
     }
-    if (this.mode === "standard" && (lower.includes("bias") || lower.includes("favourit") || lower.includes("favorit") || lower.includes("unfair"))) {
+    if (this.mode === "standard" && this.step === 0 && (lower.includes("bias") || lower.includes("favourit") || lower.includes("favorit") || lower.includes("unfair"))) {
       this.startBiasnessAssessment();
       return;
     }
@@ -202,16 +202,40 @@ const ChatEngine = {
     this.addUserMessage(text);
     this.showTypingIndicator();
 
-    setTimeout(() => {
+    if (this.step === 0) {
+      this.callAiEndpoint(text);
+    } else {
+      setTimeout(() => {
+        this.hideTypingIndicator();
+        if (this.mode === "mental_health") {
+          this.processMentalHealthStep(text);
+        } else if (this.mode === "biasness") {
+          this.processBiasnessStep(text);
+        } else {
+          this.processStandardStep(text);
+        }
+      }, 1300);
+    }
+  },
+
+  async callAiEndpoint(text) {
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await response.json();
       this.hideTypingIndicator();
-      if (this.mode === "mental_health") {
-        this.processMentalHealthStep(text);
-      } else if (this.mode === "biasness") {
-        this.processBiasnessStep(text);
-      } else {
-        this.processStandardStep(text);
-      }
-    }, 1300);
+      this.addAiMessage(data.text);
+    } catch (err) {
+      console.error("AI Error:", err);
+      this.hideTypingIndicator();
+      this.addAiMessage("I'm sorry, I am having trouble connecting to the network right now. Please try again.");
+    }
   },
 
   // MENTAL HEALTH & WELL-BEING STEP PROCESSOR
@@ -645,42 +669,58 @@ const ChatEngine = {
     this.handleUserInput(optText);
   },
 
-  finalizeReport(isAnonymous) {
+  async finalizeReport(isAnonymous) {
     this.chatData.anonymous = isAnonymous;
     this.addUserMessage(isAnonymous ? "I would prefer to submit this report completely anonymously." : "You may include my identity.");
 
     this.showTypingIndicator();
 
-    setTimeout(() => {
-      this.hideTypingIndicator();
-      const caseId = "LIS-" + Math.floor(100000 + Math.random() * 900000);
-
-      CASES_DATA.unshift({
-        id: caseId,
-        category: this.chatData.category || "Mental Health & Well-being",
-        risk: this.mentalHealthRiskScore >= 30 ? "high" : "moderate",
-        created: "Just Now",
-        status: "submitted",
-        owner: "Unassigned (Ombudsperson)",
-        anonymous: isAnonymous,
-        summary: this.chatData.description || "Wellbeing and workplace factors report.",
-        impact: this.chatData.dailyImpact || "High wellbeing impact"
+    try {
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({
+          category: this.chatData.category || "General Support",
+          description: this.chatData.description || "No details provided.",
+          reporter: isAnonymous ? "Anonymous" : (App.user ? App.user.name : "Jordan Smith"),
+          anonymous: isAnonymous
+        })
       });
-
+      const newReport = await response.json();
+      
+      this.hideTypingIndicator();
       this.addAiMessage(`
         <div style="background:var(--secondary-sage-light); border:1px solid var(--border-accent); padding:14px; border-radius:10px;">
           <h4 style="color:var(--primary-teal-dark); margin-bottom:6px;">✅ Confidential Case Report Submitted</h4>
-          <p><strong>Tracking Case ID:</strong> <span style="font-family:monospace; background:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">${caseId}</span></p>
+          <p><strong>Tracking Case ID:</strong> <span style="font-family:monospace; background:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">${newReport.id}</span></p>
           <p style="margin-top:6px; font-size:0.8rem;">
             Thank you for sharing something that may have been difficult to talk about. Your report has been routed securely to an assigned Independent Ombudsperson under strict 24h SLA.
           </p>
           <p style="margin-top:8px; font-size:0.75rem; color:var(--text-muted);">
-            🔒 Identity Status: <strong>${isAnonymous ? '100% Anonymous' : 'Named Report (Jordan Smith)'}</strong>
+            🔒 Identity Status: <strong>${isAnonymous ? '100% Anonymous' : `Named Report (${newReport.reporter})`}</strong>
           </p>
         </div>
       `);
       this.step = 99;
-    }, 1600);
+    } catch (err) {
+      console.error("Failed to submit report to server:", err);
+      // Fallback
+      this.hideTypingIndicator();
+      const caseId = "LIS-" + Math.floor(100000 + Math.random() * 900000);
+      this.addAiMessage(`
+        <div style="background:var(--secondary-sage-light); border:1px solid var(--border-accent); padding:14px; border-radius:10px;">
+          <h4 style="color:var(--primary-teal-dark); margin-bottom:6px;">✅ Confidential Case Report Submitted (Offline Mode)</h4>
+          <p><strong>Tracking Case ID:</strong> <span style="font-family:monospace; background:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">${caseId}</span></p>
+          <p style="margin-top:6px; font-size:0.8rem;">
+            Your report was saved locally (offline simulation).
+          </p>
+        </div>
+      `);
+      this.step = 99;
+    }
   },
 
   toggleVoiceRecording() {
@@ -804,3 +844,6 @@ const ChatEngine = {
     }
   }
 };
+
+window.ChatEngine = ChatEngine;
+

@@ -172,3 +172,6 @@ const WellbeingModule = {
     if (modal) modal.classList.remove("active");
   }
 };
+
+window.WellbeingModule = WellbeingModule;
+

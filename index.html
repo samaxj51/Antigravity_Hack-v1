@@ -9,6 +9,35 @@
 </head>
 <body>
 
+  <!-- SSO LOGIN OVERLAY -->
+  <div id="ssoLoginOverlay" class="sso-overlay">
+    <div class="sso-card">
+      <div class="sso-logo-container">
+        <h2>Welcome to lis<span class="highlight-ten">ten</span>360</h2>
+        <p>Enterprise Psychological Safety & Wellbeing Companion</p>
+      </div>
+      <div class="sso-divider"></div>
+      <p class="sso-instruction">Secure verification for corporate accounts</p>
+      <button class="sso-btn" onclick="App.startSSO()">
+        🔐 Sign In with Corporate SSO
+      </button>
+    </div>
+  </div>
+
+  <!-- MOCK IDP REDIRECTION MODAL -->
+  <div id="mockIdpModal" class="idp-overlay" style="display:none;">
+    <div class="idp-card">
+      <h3>Corporate Identity Provider</h3>
+      <p>Simulating secure OIDC authentication...</p>
+      <div class="idp-spinner"></div>
+      <p style="font-weight:600; margin-top:15px; margin-bottom:10px;">Select mock persona to sign in:</p>
+      <div class="idp-personas">
+        <button onclick="App.completeSSO('employee')">👤 Jordan Smith (Employee)</button>
+        <button onclick="App.completeSSO('investigator')">🛡️ Alex Rogers (Investigator)</button>
+      </div>
+    </div>
+  </div>
+
   <!-- FLOATING ACCENT DECORATIONS -->
   <div class="floating-bg-accent bg-blob-1" aria-hidden="true"></div>
   <div class="floating-bg-accent bg-blob-2" aria-hidden="true"></div>
@@ -67,7 +96,7 @@
         </button>
       </div>
 
-      <div class="user-profile-badge" tabindex="0" role="button" aria-label="User Profile">
+      <div class="user-profile-badge" tabindex="0" role="button" aria-label="User Profile" onclick="if(confirm('Are you sure you want to sign out?')) App.logout()" title="Click to Sign Out" style="cursor:pointer;">
         <div class="user-avatar">JS</div>
         <span style="font-size:0.78rem; font-weight:700;">Jordan Smith</span>
       </div>
@@ -344,11 +373,12 @@
   </div>
 
   <!-- JAVASCRIPT LIBRARIES & MODULES -->
-  <script src="js/data.js"></script>
-  <script src="js/chat.js"></script>
-  <script src="js/wellbeing.js"></script>
-  <script src="js/dashboard.js"></script>
-  <script src="js/ai-intelligence.js"></script>
-  <script src="js/app.js"></script>
+  <script type="module" src="js/data.js"></script>
+  <script type="module" src="js/chat.js"></script>
+  <script type="module" src="js/wellbeing.js"></script>
+  <script type="module" src="js/dashboard.js"></script>
+  <script type="module" src="js/ai-intelligence.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
+
 </html>

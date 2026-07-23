@@ -2,25 +2,30 @@
 
 const ChatEngine = {
   mode: "standard", // "standard", "biasness", "mental_health"
-  subPath: "support", // "support" or "workplace"
-  step: 0,
+  step: 0, // 0=Init, 1=Narrative, 2-8=Fact-Finding Q1-Q7, 9=AI Classify, 10=Category Questions (1-10), 11=Risk, 12=Summary Review, 13=Submitted
+  categoryStep: 0,
   isVoiceRecording: false,
   biasRiskScore: 0,
   mentalHealthRiskScore: 0,
+
   chatData: {
     category: "",
+    confidence: "High",
+    classificationReason: "",
+    narrative: "",
     description: "",
-    context: "",
-    experiencing: "",
-    dailyImpact: "",
-    triggers: "",
-    workloadContributing: "",
-    adequateSupport: "",
-    previousSteps: "",
-    desiredSupport: "",
-    orgContact: "",
+    when: "",
+    who: "",
+    recurrence: "",
+    frequencyCount: "",
+    impact: "",
+    evidence: "",
     isSafe: true,
     anonymous: true,
+    categoryAnswers: [],
+    riskLevel: "Moderate",
+    riskScore: 50,
+    riskFactors: [],
     attachments: []
   },
 
@@ -31,37 +36,140 @@ const ChatEngine = {
     "I'm truly sorry you've experienced this situation.",
     "You're not alone in this—your mental health and safety are our highest priority.",
     "Your wellbeing is important, and every concern deserves to be heard.",
-    "Let's work through this together step-by-step.",
+    "Let me help guide you through this step-by-step.",
     "Thank you for sharing something that may have been difficult to talk about."
   ],
 
-  // 5 STREAMLINED HIGH-RELEVANCE MENTAL HEALTH & WELLBEING QUESTIONS
-  mentalHealthQuestions: [
-    "What specific workplace situation or aspect of work is currently affecting your emotional or mental well-being?",
-    "How is this situation impacting your day-to-day work performance, concentration, or personal life?",
-    "Are specific workplace factors (e.g. workload, unrealistic expectations, conflict, management style) contributing to the issue?",
-    "What type of confidential support or guidance would be most helpful to you right now?",
-    "Do you feel safe at the moment?"
+  // 7 BASIC FACT-FINDING QUESTIONS
+  factFindingQuestions: [
+    {
+      id: "when",
+      question: "Question 1 of 7 — When did this happen?",
+      options: ["Today / Recent", "Within past month", "Approximate date", "Ongoing concern", "Multiple occasions"]
+    },
+    {
+      id: "who",
+      question: "Question 2 of 7 — Who was involved?",
+      options: ["Manager / Supervisor", "Colleague / Peer", "Team / Department", "External person", "Other individual"]
+    },
+    {
+      id: "recurrence",
+      question: "Question 3 of 7 — Has this happened before?",
+      options: ["Yes, repeated incident", "No, first occurrence", "Not sure"]
+    },
+    {
+      id: "impact",
+      question: "Question 4 of 7 — How has this situation affected you?",
+      options: ["Emotional well-being", "Mental health & anxiety", "Work performance & focus", "Career development", "Team relationships", "Sense of safety"]
+    },
+    {
+      id: "evidence",
+      question: "Question 5 of 7 — Do you have any supporting evidence?",
+      options: ["Emails & Messages", "Documents & Screenshots", "Witness statements", "No evidence currently available", "Other evidence"]
+    },
+    {
+      id: "safety",
+      question: "Question 6 of 7 — Do you feel that you are currently at risk or unsafe because of this situation?",
+      options: ["💚 No, I feel safe", "🚨 Yes, I feel at risk", "⚠️ I'm not sure"]
+    },
+    {
+      id: "anonymity",
+      question: "Question 7 of 7 — Would you like to remain anonymous?",
+      options: ["🔒 Yes, submit 100% anonymously", "👤 No, include my identity (Jordan Smith)"]
+    }
   ],
 
-  // 5 STREAMLINED HIGH-RELEVANCE BIASNESS & INCLUSION RISK QUESTIONS
-  biasnessQuestions: [
-    "What specific situation, decision, or behaviour made you feel treated unfairly, biased, or excluded?",
-    "In what context did this occur? (e.g. Promotion, Performance Review, Work Allocation, Compensation, Meetings)",
-    "Did this situation involve someone with authority over you, and were you treated differently from colleagues in similar circumstances?",
-    "Did you observe language, comments, or decisions reflecting stereotypes, preferences, or intentional exclusion?",
-    "Has this situation affected your career development, recognition, or ability to participate fully at work?"
+  // CATEGORIES FOR MANUAL SELECTION
+  allCategories: [
+    "Bullying / Harassment",
+    "Discrimination",
+    "Retaliation",
+    "Workplace Behaviour",
+    "Manager / Leadership Concern",
+    "Conflict / Interpersonal Issue",
+    "Ethics / Conduct",
+    "Policy Violation",
+    "Financial / Fraud Concern",
+    "Conflict of Interest",
+    "Well-being / Mental Health",
+    "Other"
   ],
 
-  standardQuestions: [
-    "Could you tell me what happened in your own words?",
-    "When did this occur?",
-    "Is this an ongoing concern or a recent single incident?",
-    "Who was involved, or which team/department did this relate to?",
-    "How has this situation affected you personally or professionally?",
-    "Have you already spoken with anyone else or reported this before?",
-    "Would you prefer to submit this report completely anonymously?"
-  ],
+  // CATEGORY-SPECIFIC 10 TARGETED QUESTIONS MATRIX
+  categoryQuestionsMap: {
+    "Bullying / Harassment": [
+      "What specific words, actions, or repeated behaviours occurred?",
+      "Where did the incident(s) take place? (e.g. In person, Slack/Teams, Meetings, Remote)",
+      "Who was present as a witness or observer?",
+      "How frequently or regularly has this behaviour occurred?",
+      "Was there a clear power imbalance or position of authority involved?",
+      "Did you communicate your discomfort or ask the person to stop?",
+      "How did the person respond if you communicated your concern?",
+      "Did this affect your sense of psychological safety or dignity at work?",
+      "Are there written records, emails, or chat logs documenting the incidents?",
+      "What outcome, remedy, or support are you seeking from this report?"
+    ],
+    "Discrimination": [
+      "Which protected characteristic or ground do you believe was involved? (e.g. Gender, Race, Age, Disability, Sexual Orientation, Religion)",
+      "What specific decision or treatment was affected? (e.g. Promotion, Hiring, Pay, Project Allocation)",
+      "Were colleagues in similar roles or circumstances treated differently?",
+      "Who made the decision or exhibited the discriminatory behaviour?",
+      "Were any explicit comments, stereotyping, or assumptions expressed?",
+      "Did you observe a broader pattern or systemic issue in the team?",
+      "When did you first notice the difference in treatment?",
+      "Have you raised this concern previously with HR or management?",
+      "What supporting documentation or comparative evidence exists?",
+      "What resolution or outcome would you like to see?"
+    ],
+    "Retaliation": [
+      "What was the original complaint, report, or protected activity you participated in?",
+      "When did you make the original report or express the concern?",
+      "What retaliatory action was taken against you afterwards?",
+      "Who took the retaliatory action?",
+      "How much time elapsed between your original report and the retaliatory action?",
+      "Were you given any justification or explanation for the action?",
+      "Has this impacted your duties, evaluation, compensation, or status?",
+      "Are there witnesses who can verify the sequence of events?",
+      "Do you have documentation showing the change in treatment before and after?",
+      "What protection or remedial action are you seeking?"
+    ],
+    "Well-being / Mental Health": [
+      "What specific workplace situation or aspect of work is affecting your well-being?",
+      "How would you describe your current emotional or mental state?",
+      "How is this impacting your day-to-day concentration, energy, or performance?",
+      "Are workload, working hours, or unrealistic deadlines contributing?",
+      "Do you feel supported by your manager or immediate team?",
+      "Have you experienced sleep disruption, anxiety, or burnout symptoms?",
+      "Have you previously used any support services or EAP resources?",
+      "Would you like immediate confidential connection to a Mental Health First Aider?",
+      "What workplace adjustments or workload accommodations would be helpful?",
+      "Do you feel safe continuing in your current work environment today?"
+    ],
+    "Ethics / Conduct": [
+      "What specific policy, law, or ethical standard was violated?",
+      "Who was involved in the non-compliant or unethical conduct?",
+      "What was the potential financial, operational, or reputational impact?",
+      "When and where did you discover or observe the violation?",
+      "Was this a single incident or an ongoing practice?",
+      "Were instructions given to conceal or misrepresent information?",
+      "Are financial records, contracts, or audit trails available?",
+      "Who else is aware of or involved in this situation?",
+      "Have you reported this to Compliance, Legal, or Management?",
+      "What immediate corrective action or investigation is required?"
+    ],
+    "Default": [
+      "Could you provide additional details about the primary incident?",
+      "Where and when did this situation occur?",
+      "Who were the key individuals involved or affected?",
+      "Is this an ongoing issue or an isolated occurrence?",
+      "How has this impacted your day-to-day work environment?",
+      "What evidence, messages, or documents support this concern?",
+      "Have you discussed this with anyone in leadership or HR?",
+      "What steps have been taken so far to address the issue?",
+      "Are there safety or psychological wellbeing factors involved?",
+      "What resolution or support would be most helpful right now?"
+    ]
+  },
 
   init() {
     this.renderWelcomeMessage();
@@ -76,7 +184,7 @@ const ChatEngine = {
         <div class="chat-bubble">
           <p><strong>Hello Jordan, welcome to listen360.</strong></p>
           <p style="margin-top:6px;">
-            I am your dedicated AI Psychological Safety & Mental Wellbeing Companion. I am here to listen with empathy, complete confidentiality, and zero judgment.
+            I am your dedicated AI Psychological Safety, Wellbeing & Workplace Integrity Assistant. I am here to listen with empathy, complete confidentiality, and zero judgment.
           </p>
           <p style="margin-top:6px; font-size:0.78rem; color:var(--primary-teal); font-weight:600;">
             🔒 <em>All conversations are 100% encrypted, confidential, and safe.</em>
@@ -87,12 +195,12 @@ const ChatEngine = {
 
       <div class="chat-bubble-wrap ai">
         <div class="chat-bubble">
-          <p>How can I support you today? Select a pathway or type/record your thoughts in your own words:</p>
+          <p>How can I support you today? Describe your concern in your own words, or select a quick option:</p>
           <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.startMentalHealthAssessment()">🌿 Mental Health & Well-being Support</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.startBiasnessAssessment()">⚖️ Report Biasness, Favouritism or Exclusion</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Workplace Concern')">💬 Report General Workplace Concern</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Harassment & Respect')">🛑 Bullying or Anti-Harassment Issue</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Bullying / Harassment')">🛑 Bullying or Anti-Harassment Issue</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Well-being / Mental Health')">🌿 Mental Health & Well-being Support</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Discrimination')">⚖️ Report Discrimination or Biasness</button>
+            <button class="chat-opt-btn" onclick="ChatEngine.selectInitialOption('Workplace Behaviour')">💬 Report General Workplace Concern</button>
           </div>
         </div>
       </div>
@@ -100,717 +208,558 @@ const ChatEngine = {
     this.scrollToBottom();
   },
 
-  // MENTAL HEALTH & WELLBEING INTAKE STARTER
-  startMentalHealthAssessment() {
-    this.mode = "mental_health";
-    this.step = 0;
-    this.mentalHealthRiskScore = 0;
-    this.chatData.category = "Mental Health & Well-being";
-
-    this.addUserMessage("I would like to seek Mental Health & Well-being support.");
-
-    this.showTypingIndicator();
-
-    setTimeout(() => {
-      this.hideTypingIndicator();
-      this.addAiMessage(`
-        <div style="background:rgba(168, 213, 186, 0.25); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px; margin-bottom:8px;">
-          <strong>🌿 Mental Health & Well-being Support Mode Active</strong><br/>
-          <span style="font-size:0.76rem; color:var(--text-muted);">We will evaluate your workplace wellbeing needs and connect you directly with support resources or confidential reporting.</span>
-        </div>
-        <p>${this.getRandomEmpatheticStatement()}</p>
-        <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 1 of 5:</p>
-        <p style="margin-top:2px;">${this.mentalHealthQuestions[0]}</p>
-        <div class="chat-options-grid">
-          <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Workload & Stress')">Workload & Stress</button>
-          <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Burnout & Exhaustion')">Burnout & Exhaustion</button>
-          <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Workplace Conflict')">Workplace Conflict</button>
-          <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Isolation & Distance')">Isolation & Distance</button>
-          <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Uncertainty & Change')">Uncertainty & Change</button>
-        </div>
-      `);
-      this.step = 1;
-    }, 1200);
-  },
-
-  startBiasnessAssessment() {
-    this.mode = "biasness";
-    this.step = 0;
-    this.biasRiskScore = 0;
-    this.chatData.category = "Biasness & Favouritism";
-
-    this.addUserMessage("I would like to report an issue related to biasness, favouritism, or unfair treatment.");
-
-    this.showTypingIndicator();
-
-    setTimeout(() => {
-      this.hideTypingIndicator();
-      this.addAiMessage(`
-        <div style="background:rgba(31, 122, 140, 0.08); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px; margin-bottom:8px;">
-          <strong>⚖️ Biasness & Inclusion Risk Assessment Mode Active</strong><br/>
-          <span style="font-size:0.76rem; color:var(--text-muted);">I will ask 5 structured questions to analyze the risk score for biasness and inclusion.</span>
-        </div>
-        <p>${this.getRandomEmpatheticStatement()}</p>
-        <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 1 of 5:</p>
-        <p style="margin-top:2px;">${this.biasnessQuestions[0]}</p>
-      `);
-      this.step = 1;
-    }, 1200);
-  },
-
-  selectInitialOption(optionText) {
-    this.mode = "standard";
-    this.addUserMessage(`I would like to discuss: ${optionText}`);
-    this.chatData.category = optionText;
-
-    const statement = this.getRandomEmpatheticStatement();
-    this.showTypingIndicator();
-
-    setTimeout(() => {
-      this.hideTypingIndicator();
-      this.addAiMessage(`
-        <p>${statement}</p>
-        <p style="margin-top:6px;">${this.standardQuestions[0]}</p>
-      `);
-      this.step = 1;
-    }, 1200);
+  selectInitialOption(categoryName) {
+    this.addUserMessage(`I would like to discuss: ${categoryName}`);
+    this.chatData.category = categoryName;
+    this.step = 1;
+    this.showEmpatheticIntakeResponse();
   },
 
   handleUserInput(text) {
     if (!text.trim()) return;
-
-    const lower = text.toLowerCase();
-    if (lower.includes("formal") || lower.includes("confidential case") || lower.includes("confidential reporting")) {
-      this.startFormalReportingFlow();
-      return;
-    }
-    if (this.mode === "standard" && (lower.includes("mental") || lower.includes("stress") || lower.includes("burnout") || lower.includes("anxiety") || lower.includes("depress"))) {
-      this.startMentalHealthAssessment();
-      return;
-    }
-    if (this.mode === "standard" && (lower.includes("bias") || lower.includes("favourit") || lower.includes("favorit") || lower.includes("unfair"))) {
-      this.startBiasnessAssessment();
-      return;
-    }
 
     this.addUserMessage(text);
     this.showTypingIndicator();
 
     setTimeout(() => {
       this.hideTypingIndicator();
-      if (this.mode === "mental_health") {
-        this.processMentalHealthStep(text);
-      } else if (this.mode === "biasness") {
-        this.processBiasnessStep(text);
+
+      if (this.step === 0) {
+        // Step 1: Free Text Narrative
+        this.chatData.narrative = text;
+        this.chatData.description = text;
+        this.step = 1;
+        this.showEmpatheticIntakeResponse();
+      } else if (this.step >= 1 && this.step <= 7) {
+        // Fact-Finding Questions (1 to 7)
+        this.processFactFindingStep(text);
+      } else if (this.step === 8) {
+        // Manual Category Selection or Confirmation
+        this.processCategorySelection(text);
+      } else if (this.step === 10) {
+        // Category-Specific Questions (1-10)
+        this.processCategoryQuestionStep(text);
       } else {
         this.processStandardStep(text);
       }
-    }, 1300);
+    }, 1200);
   },
 
-  // MENTAL HEALTH & WELL-BEING STEP PROCESSOR (STREAMLINED 5-QUESTION FLOW)
-  processMentalHealthStep(userText) {
-    const statement = this.getRandomEmpatheticStatement();
-
-    switch (this.step) {
-      case 1:
-        this.chatData.description = userText;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 2 of 5:</p>
-          <p style="margin-top:2px;">${this.mentalHealthQuestions[1]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Concentration & Focus Impact')">Concentration & Focus Impact</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Productivity & Work Quality')">Productivity & Work Quality</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Motivation & Energy Drain')">Motivation & Energy Drain</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Sleep & Emotional Disruption')">Sleep & Emotional Disruption</button>
-          </div>
-        `);
-        this.step = 2;
-        break;
-
-      case 2:
-        this.chatData.experiencing = userText;
-        this.chatData.dailyImpact = userText;
-        this.mentalHealthRiskScore += 10;
-        this.addAiMessage(`
-          <p>Thank you for describing what you're experiencing. ${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 3 of 5:</p>
-          <p style="margin-top:2px;">${this.mentalHealthQuestions[2]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, work expectations contribute significantly')">Yes, significantly</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Partially contributing factors')">Partially</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('No, personal or non-work factors')">No</button>
-          </div>
-        `);
-        this.step = 3;
-        break;
-
-      case 3:
-        this.chatData.workloadContributing = userText;
-        if (userText.toLowerCase().includes("yes")) this.mentalHealthRiskScore += 15;
-        this.addAiMessage(`
-          <p>${statement} Let's ensure you get the right support pathway.</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 4 of 5:</p>
-          <p style="margin-top:2px;">${this.mentalHealthQuestions[3]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Mental Health First Aider (MHFA)')">Mental Health First Aider (MHFA)</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Professional Counselling (EAP)')">Professional Counselling (EAP)</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Guidance from HR / Ombudsperson')">Guidance from HR / Ombudsperson</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Workplace Adjustments & Self-Help')">Workplace Adjustments</button>
-          </div>
-        `);
-        this.step = 4;
-        break;
-
-      case 4:
-        this.chatData.desiredSupport = userText;
-        // FINAL QUESTION (5 OF 5): IMMEDIATE SAFETY & STATUS CHECK
-        this.addAiMessage(`
-          <p style="font-weight:700; color:var(--primary-teal-dark);">Final Question (5 of 5):</p>
-          <p style="margin-top:2px; font-size:0.95rem; font-weight:700; color:var(--color-critical);">Do you feel safe at the moment?</p>
-          <div class="chat-options-grid" style="margin-top:8px;">
-            <button class="chat-opt-btn" style="border-color:var(--color-success); font-weight:700;" onclick="ChatEngine.handleSafetyResponse('Yes')">💚 Yes, I feel safe</button>
-            <button class="chat-opt-btn" style="border-color:var(--color-critical); background:#FEE2E2; color:#991B1B; font-weight:800;" onclick="ChatEngine.handleSafetyResponse('No')">🚨 No, I do not feel safe</button>
-            <button class="chat-opt-btn" style="border-color:var(--color-warning); background:#FEF3C7; color:#92400E; font-weight:700;" onclick="ChatEngine.handleSafetyResponse('Not sure')">⚠️ I'm not sure</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
-          </div>
-        `);
-        this.step = 5;
-        break;
-
-      case 5:
-        this.handleSafetyResponse(userText);
-        break;
-
-      default:
-        if (this.step >= 5 || userText.toLowerCase().includes("formal") || userText.toLowerCase().includes("report")) {
-          this.startFormalReportingFlow();
-        }
-        break;
-    }
-  },
-
-  // 🚨 IMMEDIATE SAFETY INTERVENTION PATHWAY
-  handleSafetyResponse(responseVal) {
-    if (responseVal.toLowerCase().includes("formal") || responseVal.toLowerCase().includes("confidential") || responseVal.toLowerCase().includes("report")) {
-      this.startFormalReportingFlow();
-      return;
-    }
-    this.addUserMessage(`Safety status: ${responseVal}`);
-
-    if (responseVal === "No" || responseVal === "Not sure") {
-      this.chatData.isSafe = false;
-      this.showTypingIndicator();
-
-      setTimeout(() => {
-        this.hideTypingIndicator();
-        this.addAiMessage(`
-          <div style="background:#FEE2E2; border:2px solid #E63946; border-radius:12px; padding:16px; margin-top:6px;">
-            <h3 style="color:#991B1B; font-size:1.05rem; font-weight:800; display:flex; align-items:center; gap:6px;">
-              🚨 Immediate Safety & Support Intervention
-            </h3>
-            <p style="margin-top:8px; font-size:0.88rem; color:#7F1D1D; line-height:1.5;">
-              "Thank you for letting me know. Your safety is important. Would you like to connect with a trained mental health professional or an appropriate support service now?"
-            </p>
-
-            <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
-              <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#E63946; color:#991B1B; font-weight:800; padding:8px 14px; text-align:left;" onclick="WellbeingModule.openMHFAConnectModal()">🌿 Talk to an MHFA (Mental Health First Aider) Right Now</button>
-              <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#0284C7; color:#0369A1; font-weight:700; padding:8px 14px; text-align:left;" onclick="WellbeingModule.openMHFAConnectModal()">📅 Book a Urgent Confidential Counselling Appointment</button>
-              <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#D97706; color:#92400E; font-weight:700; padding:8px 14px; text-align:left;" onclick="alert('Connecting to 24/7 Employee Assistance Line: 1-800-WELLBEING')">📞 Connect with 24/7 Crisis Helpline</button>
-              <button class="chat-opt-btn" style="background:#FFFFFF; border-color:var(--primary-teal); color:var(--primary-teal); font-weight:700; padding:8px 14px; text-align:left;" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
-              <button class="chat-opt-btn" style="background:#FFFFFF; border-color:var(--border-color); color:var(--text-main); font-weight:600; padding:8px 14px; text-align:left;" onclick="App.openLearningModal('mental-health')">📚 Explore Self-Help Wellbeing Resources</button>
-            </div>
-          </div>
-        `);
-      }, 1200);
-
-    } else {
-      // SAFE PATHWAY: RENDER PRE-SUBMISSION SUMMARY PREVIEW
-      this.chatData.isSafe = true;
-      this.renderPreSubmissionSummaryPreview();
-    }
-  },
-
-  renderPreSubmissionSummaryPreview() {
+  // STEP 2: EMPATHETIC ACKNOWLEDGMENT & START 7 FACT-FINDING QUESTIONS
+  showEmpatheticIntakeResponse() {
     this.showTypingIndicator();
-
     setTimeout(() => {
       this.hideTypingIndicator();
-      const aiSummary = this.generateAICaseSummary();
-
       this.addAiMessage(`
-        <div class="pre-summary-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
-          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:1.2rem;">📝</span>
-              <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Review AI Case Summary Before Submission</h4>
-            </div>
-            <span style="background:rgba(31, 122, 140, 0.1); color:var(--primary-teal-dark); border:1px solid var(--border-accent); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
-              Preview Mode
-            </span>
-          </div>
-
-          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:8px;">
-            Here is the summary compiled from your 5 answers. Review and edit before generating your formal confidential ticket:
-          </p>
-
-          <div style="margin-top:10px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px; font-size:0.78rem; color:var(--text-main);">
-            <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Primary Concern:</strong> ${aiSummary.primaryConcern}</div>
-            <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Impact on Work/Life:</strong> ${aiSummary.impact}</div>
-            <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Contributing Factors:</strong> ${aiSummary.incidentSummary}</div>
-            <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Requested Support:</strong> ${aiSummary.supportRequested}</div>
-            
-            <div style="margin-top:4px; background:var(--bg-card); padding:8px 10px; border-radius:6px; border-left:3px solid var(--primary-teal);">
-              <strong style="color:var(--primary-teal); font-size:0.72rem; display:block;">AI Synthesized Summary:</strong>
-              <p style="margin:2px 0 0 0; font-size:0.75rem; font-style:italic; color:var(--text-main);">"${aiSummary.overallSummary}"</p>
-            </div>
-          </div>
-
-          <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
-            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px 12px; border-radius:6px; font-size:0.84rem; cursor:pointer;" onclick="ChatEngine.startFormalReportingFlow()">
-              📋 Continue with Formal Confidential Case Reporting (Generate Ticket Number)
-            </button>
-            <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="WellbeingModule.openAddDetailsModal()">
-              ✏️ Add / Edit Additional Details
-            </button>
-          </div>
+        <p>Thank you for sharing this with me. I understand that this may not have been easy to share. I will ask you a few questions to better understand your concern.</p>
+        
+        <div style="margin-top:10px; background:rgba(31, 122, 140, 0.06); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px;">
+          <strong style="color:var(--primary-teal-dark); font-size:0.85rem;">Step 1 of 7 Fact-Finding Assessment</strong>
+        </div>
+        
+        <p style="margin-top:8px; font-weight:700; color:var(--primary-teal-dark);">${this.factFindingQuestions[0].question}</p>
+        <div class="chat-options-grid">
+          ${this.factFindingQuestions[0].options.map(opt => `
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('${opt}')">${opt}</button>
+          `).join('')}
         </div>
       `);
-    }, 1000);
-  },
-
-  // BIASNESS & INCLUSION STEP PROCESSOR (STREAMLINED 5-QUESTION FLOW)
-  processBiasnessStep(userText) {
-    const statement = this.getRandomEmpatheticStatement();
-
-    switch (this.step) {
-      case 1:
-        this.chatData.description = userText;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 2 of 5:</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[1]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Promotion & Career Advancement')">Promotion & Career Advancement</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Performance Review & Evaluation')">Performance Review</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Work Allocation & Project Assignments')">Work Allocation</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Meetings & Communication Inclusion')">Meetings & Inclusion</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Compensation & Rewards')">Compensation & Rewards</button>
-          </div>
-        `);
-        this.step = 2;
-        break;
-
-      case 2:
-        this.chatData.context = userText;
-        this.biasRiskScore += 15;
-        this.addAiMessage(`
-          <p>Understood. Context is crucial for evaluation. ${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 3 of 5:</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[2]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, authority figure involved & clear differential treatment')">Yes - Authority & Differential Treatment</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, differential treatment observed among peers')">Yes - Differential Treatment Observed</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Partially or unsure')">Partially / Unsure</button>
-          </div>
-        `);
-        this.step = 3;
-        break;
-
-      case 3:
-        this.chatData.differentialTreatment = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 20;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Question 4 of 5:</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[3]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, language or comments reflecting stereotypes noted')">Yes - Stereotypes or Language Noted</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, excluded from key meetings or discussions')">Yes - Excluded from Meetings/Decisions</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('No explicit comments noted')">No Explicit Comments</button>
-          </div>
-        `);
-        this.step = 4;
-        break;
-
-      case 4:
-        this.chatData.stereotypesObserved = userText;
-        if (userText.toLowerCase().includes("yes")) this.biasRiskScore += 20;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px; font-weight:700; color:var(--primary-teal-dark);">Final Question (5 of 5):</p>
-          <p style="margin-top:2px;">${this.biasnessQuestions[4]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('High Impact on career advancement & recognition')">High Impact on Career & Advancement</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Moderate Impact on morale & daily participation')">Moderate Impact on Morale</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Low Impact - Recent single situation')">Low Impact - Recent Incident</button>
-          </div>
-        `);
-        this.step = 5;
-        break;
-
-      case 5:
-        this.chatData.futureCareerImpact = userText;
-        if (userText.toLowerCase().includes("high") || userText.toLowerCase().includes("yes")) this.biasRiskScore += 25;
-
-        let riskLevel = "Low Risk";
-        let riskBadgeColor = "#2D6A4F";
-        if (this.biasRiskScore >= 50) {
-          riskLevel = "Critical Risk";
-          riskBadgeColor = "#E63946";
-        } else if (this.biasRiskScore >= 35) {
-          riskLevel = "High Risk";
-          riskBadgeColor = "#D97706";
-        } else if (this.biasRiskScore >= 20) {
-          riskLevel = "Moderate Risk";
-          riskBadgeColor = "#0284C7";
-        }
-
-        const aiSummary = this.generateAICaseSummary();
-
-        this.addAiMessage(`
-          <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
-            <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
-              <h4 style="color:var(--primary-teal); font-size:0.95rem; margin:0; font-weight:800;">📊 Biasness Risk & AI Case Summary</h4>
-              <span style="background:${riskBadgeColor}; color:white; padding:3px 10px; border-radius:12px; font-size:0.72rem; font-weight:800;">${riskLevel} (${this.biasRiskScore}/100)</span>
-            </div>
-            
-            <p style="margin-top:8px; font-size:0.78rem; color:var(--text-muted);">
-              Summary compiled from your 5 responses:
-            </p>
-
-            <div style="margin-top:8px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px; font-size:0.78rem; color:var(--text-main);">
-              <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Primary Concern:</strong> ${aiSummary.primaryConcern}</div>
-              <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Impact on Career/Work:</strong> ${aiSummary.impact}</div>
-              <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Differential Treatment Context:</strong> ${aiSummary.incidentSummary}</div>
-              <div><strong style="color:var(--text-muted); font-size:0.72rem; display:block;">Stereotypes / Language Noted:</strong> ${aiSummary.supportRequested}</div>
-              
-              <div style="margin-top:4px; background:var(--bg-card); padding:8px 10px; border-radius:6px; border-left:3px solid var(--primary-teal);">
-                <strong style="color:var(--primary-teal); font-size:0.72rem; display:block;">AI Synthesized Summary:</strong>
-                <p style="margin:2px 0 0 0; font-size:0.75rem; font-style:italic; color:var(--text-main);">"${aiSummary.overallSummary}"</p>
-              </div>
-            </div>
-
-            <div class="chat-options-grid" style="margin-top:12px; flex-direction:column; gap:8px;">
-              <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:800; background:var(--primary-teal); color:#FFFFFF; padding:10px; border-radius:6px; text-align:center;" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting (Generate Ticket Number)</button>
-              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color);" onclick="ChatEngine.finalizeReport(true)">🔒 Submit 100% Anonymously</button>
-            </div>
-          </div>
-        `);
-        this.step = 6;
-        break;
-
-      default:
-        if (this.step >= 5 || userText.toLowerCase().includes("formal") || userText.toLowerCase().includes("report")) {
-          this.startFormalReportingFlow();
-        }
-        break;
-    }
-  },
-
-  processStandardStep(userText) {
-    const statement = this.getRandomEmpatheticStatement();
-
-    switch (this.step) {
-      case 1:
-        this.chatData.description = userText;
-        this.addAiMessage(`
-          <p>Thank you for explaining. ${statement}</p>
-          <p style="margin-top:6px;">${this.standardQuestions[1]}</p>
-        `);
-        this.step = 2;
-        break;
-
-      case 2:
-        this.chatData.dateOccurred = userText;
-        this.addAiMessage(`
-          <p>Thank you. I've noted the timeline.</p>
-          <p style="margin-top:6px;">${this.standardQuestions[2]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Yes, ongoing concern')">Yes, ongoing concern</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('Recent single incident')">Recent single incident</button>
-          </div>
-        `);
-        this.step = 3;
-        break;
-
-      case 3:
-        this.chatData.ongoing = userText;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px;">${this.standardQuestions[3]}</p>
-        `);
-        this.step = 4;
-        break;
-
-      case 4:
-        this.chatData.peopleInvolved = userText;
-        this.addAiMessage(`
-          <p>Understood. ${statement}</p>
-          <p style="margin-top:6px;">${this.standardQuestions[4]}</p>
-        `);
-        this.step = 5;
-        break;
-
-      case 5:
-        this.chatData.impact = userText;
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px;">${this.standardQuestions[5]}</p>
-        `);
-        this.step = 6;
-        break;
-
-      case 6:
-        this.chatData.spokenBefore = userText;
-        this.addAiMessage(`
-          <p>Understood.</p>
-          <p style="margin-top:6px;">${this.standardQuestions[6]}</p>
-          <div class="chat-options-grid">
-            <button class="chat-opt-btn" style="border-color:var(--primary-teal); font-weight:700; background:rgba(31, 122, 140, 0.06);" onclick="ChatEngine.startFormalReportingFlow()">📋 Continue with Formal Confidential Case Reporting</button>
-            <button class="chat-opt-btn" onclick="ChatEngine.finalizeReport(true)">🔒 Submit 100% Anonymously</button>
-          </div>
-        `);
-        this.step = 7;
-        break;
-
-      default:
-        this.addAiMessage(`
-          <p>${statement}</p>
-          <p style="margin-top:6px;">Is there anything else you'd like to add before submitting?</p>
-        `);
-        break;
-    }
+      this.step = 2;
+    }, 1200);
   },
 
   handleOptionSelect(optText) {
     this.handleUserInput(optText);
   },
 
-  generateAICaseSummary() {
-    const cd = this.chatData;
-    const isBias = this.mode === "biasness" || (cd.category && cd.category.toLowerCase().includes("bias"));
-    
-    // Primary Concern
-    const primaryConcern = cd.description || (isBias 
-      ? "Workplace biasness, favouritism, or unfair treatment concern." 
-      : "Workplace stress and emotional wellbeing factors affecting day-to-day work.");
-    
-    // Emotional State / Context
-    const emotionalState = cd.experiencing || cd.context || (isBias
-      ? "Observed differential treatment and potential exclusion in workplace decisions."
-      : "Feeling overwhelmed, anxious, emotionally strained, or seeking support.");
-    
-    // Incident / Contributing Factors
-    const incidentSummary = cd.workloadContributing || cd.differentialTreatment || cd.triggers || cd.context || (isBias
-      ? "Differential treatment observed involving authority figures or peer group interactions."
-      : "Workplace pressures, workload expectations, or environmental factors contributed.");
-    
-    // Impact
-    const impact = cd.dailyImpact || cd.futureCareerImpact || (isBias
-      ? "Affecting career advancement, team visibility, morale, or daily participation."
-      : "Difficulty concentrating, sleep disruption, reduced motivation, or emotional strain.");
-    
-    // Support Requested
-    const supportRequested = cd.desiredSupport || cd.stereotypesObserved || "Confidential Independent Ombudsperson review & support requested.";
-    
-    // Severity assessment
-    let severity = "Medium";
-    if (cd.isSafe === false || this.mentalHealthRiskScore >= 40 || this.biasRiskScore >= 50) {
-      severity = "High";
-    } else if (this.mentalHealthRiskScore < 20 && this.biasRiskScore < 20) {
-      severity = "Low";
+  // PROCESS FACT-FINDING QUESTIONS (Q1 TO Q7)
+  processFactFindingStep(userText) {
+    const qIndex = this.step - 1; // 1 to 7 mapping
+    const currentQ = this.factFindingQuestions[qIndex - 1];
+
+    if (currentQ) {
+      if (currentQ.id === "when") this.chatData.when = userText;
+      if (currentQ.id === "who") this.chatData.who = userText;
+      if (currentQ.id === "recurrence") {
+        this.chatData.recurrence = userText;
+        if (userText.toLowerCase().includes("yes")) {
+          this.addAiMessage(`<p style="font-size:0.82rem; font-style:italic; color:var(--text-muted);">Approximately how many times has this occurred?</p>`);
+        }
+      }
+      if (currentQ.id === "impact") this.chatData.impact = userText;
+      if (currentQ.id === "evidence") this.chatData.evidence = userText;
+      if (currentQ.id === "safety") {
+        this.chatData.isSafe = !userText.toLowerCase().includes("yes");
+        if (userText.toLowerCase().includes("yes") || userText.toLowerCase().includes("risk") || userText.toLowerCase().includes("unsafe")) {
+          this.triggerUrgentSafetyEscalation();
+          return;
+        }
+      }
+      if (currentQ.id === "anonymity") {
+        this.chatData.anonymous = userText.toLowerCase().includes("yes") || userText.toLowerCase().includes("anonymous");
+      }
     }
 
-    // AI Overall Summary Text (Dynamically built from user's actual answers)
-    const overallSummary = isBias
-      ? `User submitted a confidential report regarding biasness/favouritism: "${primaryConcern}". Impact noted: "${impact}". Context: "${incidentSummary}". Recommended for Independent Ombudsperson review.`
-      : `User submitted a confidential report regarding workplace wellbeing: "${primaryConcern}". Impact noted: "${impact}". Contributing factors: "${incidentSummary}". Recommended for confidential Ombudsperson review.`;
-
-    return {
-      primaryConcern,
-      emotionalState,
-      incidentSummary,
-      impact,
-      supportRequested,
-      severity,
-      overallSummary
-    };
+    if (this.step < 7) {
+      const nextQ = this.factFindingQuestions[this.step];
+      this.step++;
+      this.addAiMessage(`
+        <p style="font-weight:700; color:var(--primary-teal-dark);">${nextQ.question}</p>
+        <div class="chat-options-grid">
+          ${nextQ.options.map(opt => `
+            <button class="chat-opt-btn" onclick="ChatEngine.handleOptionSelect('${opt}')">${opt}</button>
+          `).join('')}
+        </div>
+      `);
+    } else {
+      // Completed 7 Fact-Finding Questions -> Move to AI Classification (Step 4 & Part B)
+      this.evaluateAIConcernClassification();
+    }
   },
 
-  startFormalReportingFlow() {
-    this.addUserMessage("📋 Continue with Formal Confidential Case Reporting");
+  // URGENT CRISIS ESCALATION
+  triggerUrgentSafetyEscalation() {
+    this.addAiMessage(`
+      <div style="background:#FEE2E2; border:2px solid #E63946; border-radius:12px; padding:16px; margin-top:6px;">
+        <h3 style="color:#991B1B; font-size:1.05rem; font-weight:800; display:flex; align-items:center; gap:6px;">
+          🚨 Immediate Safety & Crisis Escalation
+        </h3>
+        <p style="margin-top:8px; font-size:0.88rem; color:#7F1D1D; line-height:1.5;">
+          Your safety is our top priority. Because you indicated feeling at risk, immediate crisis support pathways are active:
+        </p>
+
+        <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+          <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#E63946; color:#991B1B; font-weight:800; padding:8px 14px; text-align:left;" onclick="WellbeingModule.openMHFAConnectModal()">🌿 Talk to Mental Health First Aider (MHFA) Right Now</button>
+          <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#0284C7; color:#0369A1; font-weight:700; padding:8px 14px; text-align:left;" onclick="WellbeingModule.openMHFAConnectModal()">📅 Book Urgent Confidential Counselling</button>
+          <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#D97706; color:#92400E; font-weight:700; padding:8px 14px; text-align:left;" onclick="alert('Connecting to 24/7 Helpline: 1-800-WELLBEING')">📞 Call 24/7 Crisis Helpline</button>
+          <button class="chat-opt-btn" style="background:#FFFFFF; border-color:var(--primary-teal); color:var(--primary-teal); font-weight:700; padding:8px 14px; text-align:left;" onclick="ChatEngine.evaluateAIConcernClassification()">📋 Continue Formal Reporting Process</button>
+        </div>
+      </div>
+    `);
+  },
+
+  // STEP 4: AI CONCERN CLASSIFICATION & CONFIDENCE SCORE
+  evaluateAIConcernClassification() {
+    this.showTypingIndicator();
+    setTimeout(() => {
+      this.hideTypingIndicator();
+
+      const text = (this.chatData.narrative + " " + this.chatData.description).toLowerCase();
+      let detectedCategory = "Bullying / Harassment";
+      let confidence = "High";
+      let reasoning = "Your responses mention repeated inappropriate comments and impact on your well-being.";
+
+      if (text.includes("mental") || text.includes("stress") || text.includes("burnout") || text.includes("anxiety") || text.includes("depress")) {
+        detectedCategory = "Well-being / Mental Health";
+        confidence = "High";
+        reasoning = "Your responses indicate emotional strain, workload pressure, or mental health support needs.";
+      } else if (text.includes("bias") || text.includes("favourit") || text.includes("favorit") || text.includes("unfair") || text.includes("discriminat")) {
+        detectedCategory = "Discrimination";
+        confidence = "High";
+        reasoning = "Your responses mention unfair differential treatment, stereotyping, or exclusion.";
+      } else if (text.includes("retaliat") || text.includes("punish") || text.includes("demot")) {
+        detectedCategory = "Retaliation";
+        confidence = "High";
+        reasoning = "Your responses indicate adverse action following a previous report or complaint.";
+      }
+
+      this.chatData.category = detectedCategory;
+      this.chatData.confidence = confidence;
+      this.chatData.classificationReason = reasoning;
+
+      // PART B: WELL-BEING PARALLEL PATHWAY CHECK
+      if (detectedCategory === "Well-being / Mental Health") {
+        this.renderWellbeingParallelPathway(reasoning);
+        return;
+      }
+
+      // STANDARD CATEGORY CLASSIFICATION CARD
+      this.addAiMessage(`
+        <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.2rem;">🤖</span>
+              <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">AI Concern Classification</h4>
+            </div>
+            <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
+              Confidence: ${confidence}
+            </span>
+          </div>
+
+          <p style="font-size:0.84rem; color:var(--text-main); margin-top:8px; line-height:1.45;">
+            Based on what you've shared, your concern may relate to:
+          </p>
+          <div style="background:rgba(31, 122, 140, 0.08); border-radius:8px; padding:10px; margin-top:6px;">
+            <strong style="color:var(--primary-teal); font-size:1rem;">📌 ${detectedCategory}</strong>
+            <p style="font-size:0.76rem; color:var(--text-muted); margin-top:4px;">
+              <em>Why: ${reasoning}</em>
+            </p>
+          </div>
+
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:10px;">
+            Would you like to continue with this category or select a different one?
+          </p>
+
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px; border-radius:6px; font-size:0.84rem; cursor:pointer;" onclick="ChatEngine.confirmCategory('${detectedCategory}')">
+              🟢 Yes, continue with ${detectedCategory}
+            </button>
+            <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.8rem; cursor:pointer;" onclick="ChatEngine.promptManualCategorySelection()">
+              🔵 Choose a different category
+            </button>
+          </div>
+        </div>
+      `);
+      this.step = 8;
+    }, 1400);
+  },
+
+  // PART B: WELL-BEING PARALLEL PATHWAY
+  renderWellbeingParallelPathway(reasoning) {
+    this.addAiMessage(`
+      <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
+        <div style="display:flex; align-items:center; gap:8px; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+          <span style="font-size:1.2rem;">🌿</span>
+          <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Well-Being & Mental Health Pathway</h4>
+        </div>
+
+        <p style="font-size:0.84rem; color:var(--text-main); margin-top:8px; line-height:1.45;">
+          Based on what you've shared, it sounds like you may benefit from dedicated well-being support:
+        </p>
+
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+          <button class="chat-opt-btn" style="background:var(--bg-panel-left); border:1px solid var(--border-accent); color:var(--primary-teal-dark); font-weight:700; text-align:left; padding:10px;" onclick="WellbeingModule.openMHFAConnectModal()">
+            Option 1 — Talk to a Mental Health First Aider (MHFA)
+          </button>
+          <button class="chat-opt-btn" style="background:var(--bg-panel-left); border:1px solid var(--border-accent); color:var(--primary-teal-dark); font-weight:700; text-align:left; padding:10px;" onclick="WellbeingModule.openMHFAConnectModal()">
+            Option 2 — Book a Confidential Counselling Appointment
+          </button>
+          <button class="chat-opt-btn" style="background:var(--bg-panel-left); border:1px solid var(--border-color); color:var(--text-main); font-weight:600; text-align:left; padding:10px;" onclick="App.openLearningModal('mental-health')">
+            Option 3 — Explore Well-Being & Stress Resources
+          </button>
+          <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:left; padding:10px;" onclick="ChatEngine.confirmCategory('Well-being / Mental Health')">
+            Option 4 — Continue with Formal Reporting Process
+          </button>
+        </div>
+      </div>
+    `);
+    this.step = 8;
+  },
+
+  // STEP 5: MANUAL CATEGORY PICKER
+  promptManualCategorySelection() {
+    this.addAiMessage(`
+      <p>No problem. Please select the category that best describes your concern:</p>
+      <div class="chat-options-grid" style="margin-top:8px;">
+        ${this.allCategories.map(cat => `
+          <button class="chat-opt-btn" onclick="ChatEngine.confirmCategory('${cat}')">${cat}</button>
+        `).join('')}
+      </div>
+    `);
+  },
+
+  // STEP 6: START CATEGORY-SPECIFIC 10 TARGETED QUESTIONS
+  confirmCategory(selectedCategory) {
+    this.chatData.category = selectedCategory;
+    this.addUserMessage(`Confirmed Category: ${selectedCategory}`);
+
+    const questionsList = this.categoryQuestionsMap[selectedCategory] || this.categoryQuestionsMap["Default"];
+    this.currentCategoryQuestions = questionsList;
+    this.categoryStep = 0;
+
+    this.showTypingIndicator();
+    setTimeout(() => {
+      this.hideTypingIndicator();
+      this.addAiMessage(`
+        <div style="background:rgba(31, 122, 140, 0.08); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px; margin-bottom:8px;">
+          <strong>Targeted Assessment Active: ${selectedCategory}</strong><br/>
+          <span style="font-size:0.76rem; color:var(--text-muted);">Asking 10 targeted questions for ${selectedCategory}.</span>
+        </div>
+        <p style="font-weight:700; color:var(--primary-teal-dark);">Question 1 of 10:</p>
+        <p style="margin-top:2px;">${questionsList[0]}</p>
+      `);
+      this.step = 10;
+      this.categoryStep = 1;
+    }, 1200);
+  },
+
+  // PROCESS CATEGORY-SPECIFIC QUESTIONS (Q1 TO Q10)
+  processCategoryQuestionStep(userText) {
+    const qList = this.currentCategoryQuestions || this.categoryQuestionsMap["Default"];
+    this.chatData.categoryAnswers.push({
+      qIndex: this.categoryStep,
+      question: qList[this.categoryStep - 1],
+      answer: userText
+    });
+
+    if (this.categoryStep < 10 && this.categoryStep < qList.length) {
+      const nextQ = qList[this.categoryStep];
+      this.categoryStep++;
+      this.addAiMessage(`
+        <p style="font-weight:700; color:var(--primary-teal-dark);">Question ${this.categoryStep} of 10:</p>
+        <p style="margin-top:2px;">${nextQ}</p>
+      `);
+    } else {
+      // Completed all targeted questions -> Move to Step 7: AI Risk Assessment
+      this.evaluateAIRiskAssessment();
+    }
+  },
+
+  // STEP 7: AI RISK ASSESSMENT ENGINE
+  evaluateAIRiskAssessment() {
+    this.showTypingIndicator();
+    setTimeout(() => {
+      this.hideTypingIndicator();
+
+      // Calculate risk score based on recurrence, impact, evidence, authority
+      let score = 40;
+      const factors = [];
+
+      if (this.chatData.recurrence.toLowerCase().includes("yes") || this.chatData.recurrence.toLowerCase().includes("repeated")) {
+        score += 20;
+        factors.push("Repeated incidents reported");
+      }
+      if (this.chatData.who.toLowerCase().includes("manager") || this.chatData.who.toLowerCase().includes("authority")) {
+        score += 15;
+        factors.push("Potential power imbalance / manager involvement");
+      }
+      if (this.chatData.impact.toLowerCase().includes("safety") || this.chatData.impact.toLowerCase().includes("health")) {
+        score += 15;
+        factors.push("High impact on wellbeing & safety");
+      }
+      if (this.chatData.evidence && !this.chatData.evidence.toLowerCase().includes("no evidence")) {
+        score += 10;
+        factors.push("Supporting evidence available");
+      }
+
+      let riskLevel = "Moderate";
+      let badgeColor = "#D97706";
+      let icon = "🟡";
+
+      if (score >= 70) {
+        riskLevel = "Critical / Urgent";
+        badgeColor = "#E63946";
+        icon = "🔴";
+      } else if (score >= 55) {
+        riskLevel = "High";
+        badgeColor = "#D97706";
+        icon = "🟠";
+      } else if (score < 35) {
+        riskLevel = "Low";
+        badgeColor = "#2D6A4F";
+        icon = "🟢";
+      }
+
+      this.chatData.riskLevel = riskLevel;
+      this.chatData.riskScore = score;
+      this.chatData.riskFactors = factors;
+
+      this.addAiMessage(`
+        <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.2rem;">📊</span>
+              <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Preliminary AI Risk Assessment</h4>
+            </div>
+            <span style="background:${badgeColor}; color:#FFF; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:800;">
+              ${icon} ${riskLevel} (${score}/100)
+            </span>
+          </div>
+
+          <p style="font-size:0.8rem; color:var(--text-main); margin-top:8px;">
+            This assessment is based on the following key factors:
+          </p>
+          <ul style="margin:6px 0 0 16px; font-size:0.76rem; color:var(--text-muted); line-height:1.45;">
+            ${factors.map(f => `<li>${f}</li>`).join('')}
+          </ul>
+
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px; border-radius:6px; font-size:0.84rem; cursor:pointer;" onclick="ChatEngine.renderStructuredCaseSummary()">
+              📋 Review & Generate Structured Case Summary
+            </button>
+          </div>
+        </div>
+      `);
+    }, 1400);
+  },
+
+  // STEP 8: AI-GENERATED STRUCTURED CASE SUMMARY
+  renderStructuredCaseSummary() {
+    this.showTypingIndicator();
+    setTimeout(() => {
+      this.hideTypingIndicator();
+
+      const cd = this.chatData;
+      const datePeriod = cd.when || "Recent / Ongoing";
+      const whoInvolved = cd.who || "Manager & Team";
+      const freq = cd.recurrence || "Multiple occasions";
+      const impactText = cd.impact || "Emotional well-being and work performance";
+      const evidenceText = cd.evidence || "Available documents & witness statements";
+      const isAnonText = cd.anonymous ? "Anonymous Report" : "Named Report (Jordan Smith)";
+
+      const aiSummaryNarrative = `The employee reports a concern regarding "${cd.category}" occurring around ${datePeriod}. Individuals involved include ${whoInvolved}. The employee indicates frequency as "${freq}", affecting ${impactText}. Supporting evidence noted: "${evidenceText}". Preference: ${isAnonText}. Preliminary Risk: ${cd.riskLevel}.`;
+
+      this.addAiMessage(`
+        <div class="case-summary-review-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:16px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.2rem;">📝</span>
+              <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Structured AI Case Summary</h4>
+            </div>
+            <span style="background:var(--secondary-sage-light); color:var(--primary-teal-dark); border:1px solid var(--border-accent); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
+              Review & Edit Mode
+            </span>
+          </div>
+
+          <div style="margin-top:10px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px; font-size:0.78rem; color:var(--text-main);">
+            <div><strong style="color:var(--text-muted); font-size:0.72rem;">Concern Category:</strong> ${cd.category}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem;">Date / Period:</strong> ${datePeriod}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem;">Individuals Involved:</strong> ${whoInvolved}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem;">Frequency:</strong> ${freq}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem;">Impact:</strong> ${impactText}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem;">Evidence:</strong> ${evidenceText}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem;">Employee Preference:</strong> ${isAnonText}</div>
+            <div><strong style="color:var(--text-muted); font-size:0.72rem;">Preliminary Risk:</strong> ${cd.riskLevel}</div>
+
+            <div style="margin-top:6px; background:var(--bg-card); padding:8px 10px; border-radius:6px; border-left:3px solid var(--primary-teal);">
+              <strong style="color:var(--primary-teal); font-size:0.72rem; display:block;">AI Narrative Summary:</strong>
+              <p style="margin:2px 0 0 0; font-size:0.75rem; font-style:italic; color:var(--text-main);">"${aiSummaryNarrative}"</p>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="WellbeingModule.openAddDetailsModal()">
+                ✏️ Edit Summary
+              </button>
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.renderStructuredCaseSummary()">
+                🔄 Regenerate Summary
+              </button>
+            </div>
+            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px; border-radius:6px; font-size:0.84rem; cursor:pointer;" onclick="ChatEngine.submitFinalReport()">
+              ✅ Approve & Submit Formal Report
+            </button>
+            <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-muted); border:1px dashed var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.saveDraftReport()">
+              💾 Save & Continue Later
+            </button>
+          </div>
+        </div>
+      `);
+      this.step = 12;
+    }, 1200);
+  },
+
+  // STEP 9 & 10: SUBMIT FINAL REPORT & GENERATE CASE REFERENCE NUMBER (LS360-2026-001245)
+  submitFinalReport() {
+    this.addUserMessage("Approve & Submit Formal Report");
     this.showTypingIndicator();
 
     setTimeout(() => {
       this.hideTypingIndicator();
-      
-      // Generate Report ID (MHW-2026-483927 or CASE-582941)
-      const year = new Date().getFullYear();
-      const prefixes = ["MHW", "CASE"];
-      const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-      const reportNum = prefix === "MHW" 
-        ? `MHW-${year}-${Math.floor(100000 + Math.random() * 900000)}` 
-        : `CASE-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      // Generate AI Summary
-      const aiSummary = this.generateAICaseSummary();
+      const year = new Date().getFullYear();
+      const randomId = Math.floor(100000 + Math.random() * 900000);
+      const caseId = `LS360-${year}-${randomId}`;
+
       const nowStr = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 
-      // Save in system database
-      const caseRecord = {
-        id: reportNum,
-        category: "Mental Health & Well-Being",
-        risk: aiSummary.severity.toLowerCase(),
+      const newCaseRecord = {
+        id: caseId,
+        category: this.chatData.category || "Workplace Behaviour",
+        risk: (this.chatData.riskLevel || "Moderate").toLowerCase(),
         created: nowStr,
         status: "Submitted",
-        owner: "Wellbeing & HR Support Team",
-        anonymous: true,
-        summary: aiSummary.primaryConcern,
-        impact: aiSummary.impact,
-        aiSummary: aiSummary,
+        owner: "Unassigned (Ombudsperson)",
+        anonymous: this.chatData.anonymous,
+        summary: this.chatData.description || "Formal report submitted via AI intake.",
+        impact: this.chatData.impact || "Wellbeing and performance impact",
         chatData: { ...this.chatData }
       };
 
-      CASES_DATA.unshift(caseRecord);
-
-      let severityBadgeColor = "#D97706";
-      if (aiSummary.severity === "High") severityBadgeColor = "#E63946";
-      if (aiSummary.severity === "Low") severityBadgeColor = "#2D6A4F";
+      CASES_DATA.unshift(newCaseRecord);
 
       this.addAiMessage(`
-        <div class="confirmation-card-ticket" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
-          
-          <!-- HEADER & CHECKMARK -->
+        <div class="final-submission-ticket-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
           <div style="display:flex; align-items:center; gap:10px; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
-            <div style="width:32px; height:32px; border-radius:50%; background:var(--color-success-bg); border:1.5px solid var(--color-success); color:var(--color-success); display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; flex-shrink:0;">
+            <div style="width:34px; height:34px; border-radius:50%; background:var(--color-success-bg); border:1.5px solid var(--color-success); color:var(--color-success); display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:800; flex-shrink:0;">
               ✅
             </div>
             <div>
-              <h3 style="font-size:1.02rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">📋 Confidential Case Report Submitted</h3>
-              <span style="font-size:0.75rem; color:var(--color-success); font-weight:700;">Your confidential report has been successfully created.</span>
+              <h3 style="font-size:1.02rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Your concern has been successfully submitted</h3>
+              <span style="font-size:0.75rem; color:var(--color-success); font-weight:700;">Securely recorded and routed to Ombudsperson.</span>
             </div>
           </div>
 
-          <!-- REPORT NUMBER BOX -->
+          <!-- CASE REFERENCE NUMBER BOX -->
           <div style="margin-top:12px; background:rgba(31, 122, 140, 0.05); border:1px solid var(--border-color); border-radius:8px; padding:12px; text-align:center;">
             <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px;">
-              Report Number
+              Case Reference Number
             </span>
-            <div style="font-family:'Courier New', monospace; font-size:1.55rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px;">
-              ${reportNum}
+            <div style="font-family:'Courier New', monospace; font-size:1.6rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px;">
+              ${caseId}
             </div>
           </div>
 
-          <!-- STRUCTURED AI CASE SUMMARY -->
-          <div style="margin-top:14px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:10px; padding:14px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
-              <h4 style="font-size:0.88rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">✨ AI Case Summary</h4>
-              <span style="background:${severityBadgeColor}; color:#FFF; padding:2px 8px; border-radius:10px; font-size:0.68rem; font-weight:800;">
-                Severity: ${aiSummary.severity}
-              </span>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem; line-height:1.4; color:var(--text-main);">
-              <div>
-                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Primary Concern:</strong>
-                <span>${aiSummary.primaryConcern}</span>
+          <!-- STEP 10: CASE TRACKING TIMELINE -->
+          <div style="margin-top:14px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:10px; padding:12px;">
+            <strong style="color:var(--primary-teal-dark); font-size:0.8rem; display:block; margin-bottom:8px;">📍 Case Tracking Status Lifecycle</strong>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:0.74rem;">
+              <div style="display:flex; align-items:center; gap:8px; color:var(--color-success); font-weight:700;">
+                <span>● Submitted</span> <span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">(${nowStr})</span>
               </div>
-              <div>
-                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Emotional State:</strong>
-                <span>${aiSummary.emotionalState}</span>
+              <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
+                <span>○ Received</span>
               </div>
-              <div>
-                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Incident Summary:</strong>
-                <span>${aiSummary.incidentSummary}</span>
+              <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
+                <span>○ Under Initial Review (24h SLA)</span>
               </div>
-              <div>
-                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Impact:</strong>
-                <span>${aiSummary.impact}</span>
+              <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
+                <span>○ Assigned to Investigator</span>
               </div>
-              <div>
-                <strong style="color:var(--text-muted); display:block; font-size:0.72rem;">Support Requested:</strong>
-                <span>${aiSummary.supportRequested}</span>
+              <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
+                <span>○ Under Investigation</span>
               </div>
-              <div style="margin-top:4px; background:var(--bg-card); border-left:3px solid var(--primary-teal); padding:8px 10px; border-radius:4px;">
-                <strong style="color:var(--primary-teal); display:block; font-size:0.72rem;">AI Generated Summary:</strong>
-                <p style="margin:2px 0 0 0; font-size:0.76rem; color:var(--text-main); font-style:italic;">${aiSummary.overallSummary}</p>
+              <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
+                <span>○ Action / Resolution</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
+                <span>○ Closed</span>
               </div>
             </div>
           </div>
 
-          <!-- METADATA BAR -->
-          <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.74rem;">
-            <div style="background:var(--bg-panel-left); padding:6px 10px; border-radius:6px; border:1px solid var(--border-color);">
-              <span style="color:var(--text-muted);">Status:</span> <strong style="color:var(--color-success);">Submitted</strong>
-            </div>
-            <div style="background:var(--bg-panel-left); padding:6px 10px; border-radius:6px; border:1px solid var(--border-color);">
-              <span style="color:var(--text-muted);">Confidentiality:</span> <strong>Confidential</strong>
-            </div>
-          </div>
-
-          <p style="font-size:0.76rem; color:var(--text-muted); margin-top:12px; line-height:1.4;">
-            Please save your Report Number. You can use it to check the status of your report later.
-          </p>
-
-          <!-- CARD ACTIONS BUTTONS -->
           <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px;">
-            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:9px 12px; border-radius:6px; font-size:0.82rem; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${reportNum}')">
-              📄 Copy Report Number
+            <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px; border-radius:6px; font-size:0.82rem; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${caseId}')">
+              📄 Copy Case Reference Number
             </button>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.downloadReportPDF('${reportNum}')">
-                📥 Download Report (PDF)
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.downloadReportPDF('${caseId}')">
+                📥 Download Report File
               </button>
-              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.trackTicketById('${reportNum}')">
-                🔍 Track Report
+              <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.trackTicketById('${caseId}')">
+                🔍 Live Track Status
               </button>
             </div>
             <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); font-weight:600; text-align:center; padding:8px; border-radius:6px; font-size:0.8rem; cursor:pointer;" onclick="ChatEngine.renderWelcomeMessage()">
-              💬 Return to Chat
+              💬 Return to Main Menu
             </button>
           </div>
-
         </div>
       `);
-      this.step = 99;
-    }, 1000);
+      this.step = 13;
+    }, 1200);
   },
 
-  openEditSummaryModal() {
-    const modal = document.getElementById("generalModal");
-    const content = document.getElementById("modalInnerContent");
-    if (!modal || !content) return;
-
-    const currentText = this.chatData.description || "Based on our conversation, this is what I understand about your concern…";
-
-    content.innerHTML = `
-      <button class="modal-close-btn" aria-label="Close Modal" onclick="WellbeingModule.closeModal()">✕</button>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:1.8rem;">✏️</span>
-        <h3 class="modal-title">Review & Edit Summary</h3>
-      </div>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">
-        You can edit the AI-generated summary below before submitting your formal confidential report:
-      </p>
-      <textarea id="editSummaryInput" style="width:100%; height:140px; margin-top:10px; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); font-family:inherit; font-size:0.85rem; outline:none;">${currentText}</textarea>
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
-        <button class="policy-btn" style="background:var(--bg-card); color:var(--text-main);" onclick="WellbeingModule.closeModal()">Cancel</button>
-        <button class="learning-btn" onclick="ChatEngine.saveSummaryEdit()">Save Changes</button>
-      </div>
-    `;
-    modal.classList.add("active");
+  startFormalReportingFlow() {
+    this.submitFinalReport();
   },
 
-  saveSummaryEdit() {
-    const input = document.getElementById("editSummaryInput");
-    if (input) {
-      this.chatData.description = input.value.trim();
-      const box = document.getElementById("aiSummaryBoxText");
-      if (box) box.innerText = this.chatData.description;
-    }
-    WellbeingModule.closeModal();
+  startMentalHealthAssessment() {
+    this.selectInitialOption('Well-being / Mental Health');
+  },
+
+  startBiasnessAssessment() {
+    this.selectInitialOption('Discrimination');
   },
 
   saveDraftReport() {
@@ -823,100 +772,8 @@ const ChatEngine = {
     `);
   },
 
-  finalizeReport(isAnonymous) {
-    this.chatData.anonymous = isAnonymous;
-    this.addUserMessage(isAnonymous ? "I would prefer to submit this report completely anonymously." : "You may include my identity.");
-
-    this.showTypingIndicator();
-
-    setTimeout(() => {
-      this.hideTypingIndicator();
-      const caseId = "LIS-" + Math.floor(100000 + Math.random() * 900000);
-
-      CASES_DATA.unshift({
-        id: caseId,
-        category: this.chatData.category || "Mental Health & Well-being",
-        risk: this.mentalHealthRiskScore >= 30 ? "high" : "moderate",
-        created: "Just Now",
-        status: "submitted",
-        owner: "Unassigned (Ombudsperson)",
-        anonymous: isAnonymous,
-        summary: this.chatData.description || "Wellbeing and workplace factors report.",
-        impact: this.chatData.dailyImpact || "High wellbeing impact"
-      });
-
-      this.addAiMessage(`
-        <div style="background:var(--secondary-sage-light); border:1px solid var(--border-accent); padding:14px; border-radius:10px;">
-          <h4 style="color:var(--primary-teal-dark); margin-bottom:6px;">✅ Confidential Case Report Submitted</h4>
-          <p><strong>Tracking Case ID:</strong> <span style="font-family:monospace; background:#fff; padding:2px 6px; border-radius:4px; font-weight:700;">${caseId}</span></p>
-          <p style="margin-top:6px; font-size:0.8rem;">
-            Thank you for sharing something that may have been difficult to talk about. Your report has been routed securely to an assigned Independent Ombudsperson under strict 24h SLA.
-          </p>
-          <p style="margin-top:8px; font-size:0.75rem; color:var(--text-muted);">
-            🔒 Identity Status: <strong>${isAnonymous ? '100% Anonymous' : 'Named Report (Jordan Smith)'}</strong>
-          </p>
-        </div>
-      `);
-      this.step = 99;
-    }, 1600);
-  },
-
-  toggleVoiceRecording() {
-    const btn = document.getElementById("voiceRecordBtn");
-    const statusBox = document.getElementById("voiceStatusBox");
-
-    if (!this.isVoiceRecording) {
-      this.isVoiceRecording = true;
-      if (btn) btn.classList.add("recording");
-      if (statusBox) {
-        statusBox.style.display = "flex";
-        statusBox.innerHTML = `🔴 Recording audio... Click to finish speaking.`;
-      }
-    } else {
-      this.isVoiceRecording = false;
-      if (btn) btn.classList.remove("recording");
-      if (statusBox) statusBox.style.display = "none";
-
-      this.handleUserInput("🎙️ [Voice Audio Transcript]: I've been feeling overwhelmed by heavy workload deadlines and finding it hard to sleep.");
-    }
-  },
-
-  triggerFileUpload() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".pdf,.doc,.docx,.png,.jpg";
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        this.chatData.attachments.push(file.name);
-        this.addUserMessage(`📎 Attached file: ${file.name} (${Math.round(file.size/1024)} KB)`);
-
-        this.showTypingIndicator();
-        setTimeout(() => {
-          this.hideTypingIndicator();
-          this.addAiMessage(`
-            <p>Thank you for attaching <strong>${file.name}</strong>. Encrypted and saved securely to your confidential report file.</p>
-          `);
-        }, 1000);
-      }
-    };
-    input.click();
-  },
-
-  promptCaseTracking() {
-    this.addUserMessage("I would like to track the status of my report.");
-    this.showTypingIndicator();
-
-    setTimeout(() => {
-      this.hideTypingIndicator();
-      this.addAiMessage(`
-        <p>Certainly. Please enter your Report Number (e.g. <code>MHW-2026-483927</code> or <code>CASE-582941</code>) to check live status updates and AI summary details.</p>
-      `);
-    }, 1000);
-  },
-
   trackTicketById(reportId) {
-    this.addUserMessage(`Track status for Report Number: ${reportId}`);
+    this.addUserMessage(`Track status for Case Reference: ${reportId}`);
     this.showTypingIndicator();
 
     setTimeout(() => {
@@ -925,15 +782,13 @@ const ChatEngine = {
       const statusLabel = found ? (found.status || "Submitted") : "Submitted";
       const createdDate = found ? found.created : new Date().toLocaleString();
       const ownerLabel = found ? (found.owner || "Wellbeing & HR Support Team") : "Wellbeing & HR Support Team";
-      
-      const summaryObj = found && found.aiSummary ? found.aiSummary : null;
 
       this.addAiMessage(`
         <div class="ticket-status-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:10px; padding:16px; margin-top:6px; box-shadow:var(--shadow-sm);">
           <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-color);">
             <div style="display:flex; align-items:center; gap:6px;">
               <span style="font-size:1.2rem;">🔎</span>
-              <strong style="color:var(--primary-teal); font-size:0.9rem;">Report Status: ${reportId}</strong>
+              <strong style="color:var(--primary-teal); font-size:0.9rem;">Case Status: ${reportId}</strong>
             </div>
             <span style="background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success); padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:800;">
               ● ${statusLabel}
@@ -941,27 +796,9 @@ const ChatEngine = {
           </div>
 
           <div style="margin-top:10px; font-size:0.78rem; color:var(--text-main); line-height:1.45; display:flex; flex-direction:column; gap:6px;">
-            <div><strong style="color:var(--text-muted);">Assigned Team:</strong> ${ownerLabel}</div>
+            <div><strong style="color:var(--text-muted);">Assigned Investigator:</strong> ${ownerLabel}</div>
             <div><strong style="color:var(--text-muted);">Submission Date:</strong> ${createdDate}</div>
             <div><strong style="color:var(--text-muted);">Confidentiality:</strong> Confidential</div>
-            
-            ${summaryObj ? `
-            <div style="margin-top:6px; background:var(--bg-panel-left); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
-              <strong style="color:var(--primary-teal); font-size:0.75rem; display:block; margin-bottom:4px;">✨ AI Case Summary:</strong>
-              <div style="font-size:0.74rem; color:var(--text-muted); display:flex; flex-direction:column; gap:4px;">
-                <div><strong>Primary Concern:</strong> ${summaryObj.primaryConcern}</div>
-                <div><strong>Emotional State:</strong> ${summaryObj.emotionalState}</div>
-                <div><strong>Impact:</strong> ${summaryObj.impact}</div>
-                <div><strong>Support Requested:</strong> ${summaryObj.supportRequested}</div>
-                <div style="margin-top:4px; font-style:italic; color:var(--text-main);">"${summaryObj.overallSummary}"</div>
-              </div>
-            </div>
-            ` : `
-            <div style="margin-top:4px; background:var(--bg-panel-left); padding:8px 10px; border-radius:6px; border:1px solid var(--border-color);">
-              <strong style="color:var(--primary-teal); font-size:0.72rem; display:block;">AI Case Summary:</strong>
-              <p style="margin:2px 0 0 0; font-size:0.75rem; color:var(--text-muted); font-style:italic;">"Mental Health & Wellbeing formal confidential report submitted for review."</p>
-            </div>
-            `}
           </div>
 
           <div style="margin-top:12px; font-size:0.72rem; color:var(--text-dim); display:flex; justify-content:space-between; padding-top:6px; border-top:1px dashed var(--border-color);">
@@ -976,17 +813,15 @@ const ChatEngine = {
   copyTicketNumber(reportId) {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(reportId);
-      alert(`Report Number ${reportId} copied to clipboard!`);
+      alert(`Case Reference ${reportId} copied to clipboard!`);
     } else {
-      alert(`Report Number: ${reportId}`);
+      alert(`Case Reference: ${reportId}`);
     }
   },
 
   downloadReportPDF(reportId) {
     const found = CASES_DATA.find(c => c.id === reportId);
-    const textContent = found && found.aiSummary 
-      ? `CONFIDENTIAL CASE REPORT\nReport Number: ${reportId}\nStatus: ${found.status}\nDate: ${found.created}\nConfidentiality: Confidential\n\n=== AI CASE SUMMARY ===\nPrimary Concern: ${found.aiSummary.primaryConcern}\nEmotional State: ${found.aiSummary.emotionalState}\nIncident Summary: ${found.aiSummary.incidentSummary}\nImpact: ${found.aiSummary.impact}\nSupport Requested: ${found.aiSummary.supportRequested}\nSeverity: ${found.aiSummary.severity}\n\nAI Summary:\n${found.aiSummary.overallSummary}`
-      : `CONFIDENTIAL CASE REPORT\nReport Number: ${reportId}\nStatus: Submitted\nConfidentiality: Confidential`;
+    const textContent = `CONFIDENTIAL CASE REPORT\nCase Reference Number: ${reportId}\nStatus: ${found ? found.status : 'Submitted'}\nDate: ${new Date().toLocaleString()}\nConfidentiality: Confidential\n\nCategory: ${this.chatData.category}\nNarrative: ${this.chatData.description}`;
 
     const blob = new Blob([textContent], { type: "text/plain" });
     const a = document.createElement("a");

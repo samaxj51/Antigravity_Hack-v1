@@ -95,79 +95,49 @@ const ChatEngine = {
     "Other"
   ],
 
-  // CATEGORY-SPECIFIC 10 TARGETED QUESTIONS MATRIX
+  // CATEGORY-SPECIFIC 5 TARGETED QUESTIONS MATRIX
   categoryQuestionsMap: {
     "Bullying / Harassment": [
       "What specific words, actions, or repeated behaviours occurred?",
-      "Where did the incident(s) take place? (e.g. In person, Slack/Teams, Meetings, Remote)",
-      "Who was present as a witness or observer?",
-      "How frequently or regularly has this behaviour occurred?",
-      "Was there a clear power imbalance or position of authority involved?",
-      "Did you communicate your discomfort or ask the person to stop?",
-      "How did the person respond if you communicated your concern?",
-      "Did this affect your sense of psychological safety or dignity at work?",
-      "Are there written records, emails, or chat logs documenting the incidents?",
-      "What outcome, remedy, or support are you seeking from this report?"
+      "Where and how frequently did the incident(s) take place?",
+      "Who was involved or present as a witness, and was there a power imbalance?",
+      "How has this impacted your psychological safety, well-being, or work performance?",
+      "What supporting evidence exists (e.g., chat logs, emails), and what resolution do you seek?"
     ],
     "Discrimination": [
-      "Which protected characteristic or ground do you believe was involved? (e.g. Gender, Race, Age, Disability, Sexual Orientation, Religion)",
-      "What specific decision or treatment was affected? (e.g. Promotion, Hiring, Pay, Project Allocation)",
+      "Which protected characteristic or ground do you believe was involved? (e.g. Gender, Race, Age, Disability)",
+      "What specific decision or treatment was affected? (e.g. Promotion, Performance Review, Pay, Work Allocation)",
       "Were colleagues in similar roles or circumstances treated differently?",
-      "Who made the decision or exhibited the discriminatory behaviour?",
-      "Were any explicit comments, stereotyping, or assumptions expressed?",
-      "Did you observe a broader pattern or systemic issue in the team?",
-      "When did you first notice the difference in treatment?",
-      "Have you raised this concern previously with HR or management?",
-      "What supporting documentation or comparative evidence exists?",
-      "What resolution or outcome would you like to see?"
+      "Did you observe language, comments, or decisions reflecting stereotypes or intentional exclusion?",
+      "How has this impacted your career development, and what outcome are you seeking?"
     ],
     "Retaliation": [
-      "What was the original complaint, report, or protected activity you participated in?",
-      "When did you make the original report or express the concern?",
-      "What retaliatory action was taken against you afterwards?",
-      "Who took the retaliatory action?",
+      "What was the original report, complaint, or protected activity you participated in?",
+      "What retaliatory action was taken against you, and who initiated it?",
       "How much time elapsed between your original report and the retaliatory action?",
-      "Were you given any justification or explanation for the action?",
-      "Has this impacted your duties, evaluation, compensation, or status?",
-      "Are there witnesses who can verify the sequence of events?",
-      "Do you have documentation showing the change in treatment before and after?",
-      "What protection or remedial action are you seeking?"
+      "How has this impacted your job duties, evaluation, status, or well-being?",
+      "What evidence or timeline documentation do you have, and what protection do you require?"
     ],
     "Well-being / Mental Health": [
-      "What specific workplace situation or aspect of work is affecting your well-being?",
-      "How would you describe your current emotional or mental state?",
-      "How is this impacting your day-to-day concentration, energy, or performance?",
-      "Are workload, working hours, or unrealistic deadlines contributing?",
-      "Do you feel supported by your manager or immediate team?",
-      "Have you experienced sleep disruption, anxiety, or burnout symptoms?",
-      "Have you previously used any support services or EAP resources?",
-      "Would you like immediate confidential connection to a Mental Health First Aider?",
-      "What workplace adjustments or workload accommodations would be helpful?",
+      "What specific workplace situation or aspect of work is affecting your mental or emotional well-being?",
+      "How is this situation impacting your day-to-day work performance, concentration, or personal life?",
+      "Are specific workplace factors (e.g. workload, unrealistic expectations, conflict) contributing to the issue?",
+      "What type of confidential support or guidance would be most helpful to you right now?",
       "Do you feel safe continuing in your current work environment today?"
     ],
     "Ethics / Conduct": [
       "What specific policy, law, or ethical standard was violated?",
-      "Who was involved in the non-compliant or unethical conduct?",
-      "What was the potential financial, operational, or reputational impact?",
-      "When and where did you discover or observe the violation?",
-      "Was this a single incident or an ongoing practice?",
-      "Were instructions given to conceal or misrepresent information?",
-      "Are financial records, contracts, or audit trails available?",
-      "Who else is aware of or involved in this situation?",
-      "Have you reported this to Compliance, Legal, or Management?",
+      "Who was involved in the unethical conduct, and what was the financial or operational impact?",
+      "Was instructions given to conceal or misrepresent information?",
+      "Are financial records, contracts, messages, or audit trails available?",
       "What immediate corrective action or investigation is required?"
     ],
     "Default": [
-      "Could you provide additional details about the primary incident?",
-      "Where and when did this situation occur?",
+      "Could you provide additional details regarding the primary incident or concern?",
       "Who were the key individuals involved or affected?",
-      "Is this an ongoing issue or an isolated occurrence?",
-      "How has this impacted your day-to-day work environment?",
-      "What evidence, messages, or documents support this concern?",
-      "Have you discussed this with anyone in leadership or HR?",
-      "What steps have been taken so far to address the issue?",
-      "Are there safety or psychological wellbeing factors involved?",
-      "What resolution or support would be most helpful right now?"
+      "How has this situation impacted your day-to-day work experience or safety?",
+      "What supporting evidence, messages, or documents exist?",
+      "What resolution, support, or outcome are you seeking from this report?"
     ]
   },
 
@@ -237,7 +207,7 @@ const ChatEngine = {
         // Manual Category Selection or Confirmation
         this.processCategorySelection(text);
       } else if (this.step === 10) {
-        // Category-Specific Questions (1-10)
+        // Category-Specific Questions (1-5)
         this.processCategoryQuestionStep(text);
       } else {
         this.processStandardStep(text);
@@ -458,7 +428,7 @@ const ChatEngine = {
     `);
   },
 
-  // STEP 6: START CATEGORY-SPECIFIC 10 TARGETED QUESTIONS
+  // STEP 6: START CATEGORY-SPECIFIC 5 TARGETED QUESTIONS
   confirmCategory(selectedCategory) {
     this.chatData.category = selectedCategory;
     this.addUserMessage(`Confirmed Category: ${selectedCategory}`);
@@ -473,9 +443,9 @@ const ChatEngine = {
       this.addAiMessage(`
         <div style="background:rgba(31, 122, 140, 0.08); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px; margin-bottom:8px;">
           <strong>Targeted Assessment Active: ${selectedCategory}</strong><br/>
-          <span style="font-size:0.76rem; color:var(--text-muted);">Asking 10 targeted questions for ${selectedCategory}.</span>
+          <span style="font-size:0.76rem; color:var(--text-muted);">Asking 5 precise targeted questions for ${selectedCategory}.</span>
         </div>
-        <p style="font-weight:700; color:var(--primary-teal-dark);">Question 1 of 10:</p>
+        <p style="font-weight:700; color:var(--primary-teal-dark);">Question 1 of 5:</p>
         <p style="margin-top:2px;">${questionsList[0]}</p>
       `);
       this.step = 10;
@@ -483,7 +453,7 @@ const ChatEngine = {
     }, 1200);
   },
 
-  // PROCESS CATEGORY-SPECIFIC QUESTIONS (Q1 TO Q10)
+  // PROCESS CATEGORY-SPECIFIC QUESTIONS (Q1 TO Q5)
   processCategoryQuestionStep(userText) {
     const qList = this.currentCategoryQuestions || this.categoryQuestionsMap["Default"];
     this.chatData.categoryAnswers.push({
@@ -492,15 +462,15 @@ const ChatEngine = {
       answer: userText
     });
 
-    if (this.categoryStep < 10 && this.categoryStep < qList.length) {
+    if (this.categoryStep < 5 && this.categoryStep < qList.length) {
       const nextQ = qList[this.categoryStep];
       this.categoryStep++;
       this.addAiMessage(`
-        <p style="font-weight:700; color:var(--primary-teal-dark);">Question ${this.categoryStep} of 10:</p>
+        <p style="font-weight:700; color:var(--primary-teal-dark);">Question ${this.categoryStep} of 5:</p>
         <p style="margin-top:2px;">${nextQ}</p>
       `);
     } else {
-      // Completed all targeted questions -> Move to Step 7: AI Risk Assessment
+      // Completed all 5 targeted questions -> Move to Step 7: AI Risk Assessment
       this.evaluateAIRiskAssessment();
     }
   },

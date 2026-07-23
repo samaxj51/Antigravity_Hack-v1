@@ -40,42 +40,37 @@ const ChatEngine = {
     "Thank you for sharing something that may have been difficult to talk about."
   ],
 
-  // 7 BASIC FACT-FINDING QUESTIONS
+  // 3 STREAMLINED HIGH-RELEVANCE FACT-FINDING QUESTIONS
   factFindingQuestions: [
     {
-      id: "when",
-      question: "Question 1 of 7 — When did this happen?",
-      options: ["Today / Recent", "Within past month", "Approximate date", "Ongoing concern", "Multiple occasions"]
+      id: "who_when",
+      question: "Question 1 of 3 — Who was involved, and approximately when did this happen?",
+      options: [
+        "Manager / Supervisor — Ongoing concern",
+        "Manager / Supervisor — Recent incident",
+        "Colleague / Peer — Multiple occasions",
+        "Team / Department — Recent",
+        "External person or Other"
+      ]
     },
     {
-      id: "who",
-      question: "Question 2 of 7 — Who was involved?",
-      options: ["Manager / Supervisor", "Colleague / Peer", "Team / Department", "External person", "Other individual"]
+      id: "recurrence_evidence",
+      question: "Question 2 of 3 — Has this happened before, and do you have supporting evidence (e.g. emails, chat logs, witnesses)?",
+      options: [
+        "Repeated incident & Evidence available",
+        "Repeated incident & No evidence currently",
+        "Single occurrence & Evidence available",
+        "Single occurrence & No evidence currently"
+      ]
     },
     {
-      id: "recurrence",
-      question: "Question 3 of 7 — Has this happened before?",
-      options: ["Yes, repeated incident", "No, first occurrence", "Not sure"]
-    },
-    {
-      id: "impact",
-      question: "Question 4 of 7 — How has this situation affected you?",
-      options: ["Emotional well-being", "Mental health & anxiety", "Work performance & focus", "Career development", "Team relationships", "Sense of safety"]
-    },
-    {
-      id: "evidence",
-      question: "Question 5 of 7 — Do you have any supporting evidence?",
-      options: ["Emails & Messages", "Documents & Screenshots", "Witness statements", "No evidence currently available", "Other evidence"]
-    },
-    {
-      id: "safety",
-      question: "Question 6 of 7 — Do you feel that you are currently at risk or unsafe because of this situation?",
-      options: ["💚 No, I feel safe", "🚨 Yes, I feel at risk", "⚠️ I'm not sure"]
-    },
-    {
-      id: "anonymity",
-      question: "Question 7 of 7 — Would you like to remain anonymous?",
-      options: ["🔒 Yes, submit 100% anonymously", "👤 No, include my identity (Jordan Smith)"]
+      id: "safety_anonymity",
+      question: "Question 3 of 3 — Do you feel currently safe at work, and would you like to remain 100% anonymous?",
+      options: [
+        "💚 Safe & Submit 100% Anonymously",
+        "💚 Safe & Include Identity (Jordan Smith)",
+        "🚨 Unsafe / At Risk — Immediate Support Required"
+      ]
     }
   ],
 
@@ -200,8 +195,8 @@ const ChatEngine = {
         this.chatData.description = text;
         this.step = 1;
         this.showEmpatheticIntakeResponse();
-      } else if (this.step >= 1 && this.step <= 7) {
-        // Fact-Finding Questions (1 to 7)
+      } else if (this.step >= 1 && this.step <= 3) {
+        // Fact-Finding Questions (1 to 3)
         this.processFactFindingStep(text);
       } else if (this.step === 8) {
         // Manual Category Selection or Confirmation
@@ -215,16 +210,16 @@ const ChatEngine = {
     }, 1200);
   },
 
-  // STEP 2: EMPATHETIC ACKNOWLEDGMENT & START 7 FACT-FINDING QUESTIONS
+  // STEP 2: EMPATHETIC ACKNOWLEDGMENT & START 3 FACT-FINDING QUESTIONS
   showEmpatheticIntakeResponse() {
     this.showTypingIndicator();
     setTimeout(() => {
       this.hideTypingIndicator();
       this.addAiMessage(`
-        <p>Thank you for sharing this with me. I understand that this may not have been easy to share. I will ask you a few questions to better understand your concern.</p>
+        <p>Thank you for sharing this with me. I understand that this may not have been easy to share. I will ask you a few quick questions to better understand your concern.</p>
         
         <div style="margin-top:10px; background:rgba(31, 122, 140, 0.06); border-left:3px solid var(--primary-teal); padding:10px 12px; border-radius:6px;">
-          <strong style="color:var(--primary-teal-dark); font-size:0.85rem;">Step 1 of 7 Fact-Finding Assessment</strong>
+          <strong style="color:var(--primary-teal-dark); font-size:0.85rem;">Step 1 of 3 Initial Fact-Finding Assessment</strong>
         </div>
         
         <p style="margin-top:8px; font-weight:700; color:var(--primary-teal-dark);">${this.factFindingQuestions[0].question}</p>
@@ -242,35 +237,32 @@ const ChatEngine = {
     this.handleUserInput(optText);
   },
 
-  // PROCESS FACT-FINDING QUESTIONS (Q1 TO Q7)
+  // PROCESS FACT-FINDING QUESTIONS (Q1 TO Q3)
   processFactFindingStep(userText) {
-    const qIndex = this.step - 1; // 1 to 7 mapping
+    const qIndex = this.step - 1; // 1 to 3 mapping
     const currentQ = this.factFindingQuestions[qIndex - 1];
 
     if (currentQ) {
-      if (currentQ.id === "when") this.chatData.when = userText;
-      if (currentQ.id === "who") this.chatData.who = userText;
-      if (currentQ.id === "recurrence") {
-        this.chatData.recurrence = userText;
-        if (userText.toLowerCase().includes("yes")) {
-          this.addAiMessage(`<p style="font-size:0.82rem; font-style:italic; color:var(--text-muted);">Approximately how many times has this occurred?</p>`);
-        }
+      if (currentQ.id === "who_when") {
+        this.chatData.who = userText;
+        this.chatData.when = userText;
       }
-      if (currentQ.id === "impact") this.chatData.impact = userText;
-      if (currentQ.id === "evidence") this.chatData.evidence = userText;
-      if (currentQ.id === "safety") {
-        this.chatData.isSafe = !userText.toLowerCase().includes("yes");
-        if (userText.toLowerCase().includes("yes") || userText.toLowerCase().includes("risk") || userText.toLowerCase().includes("unsafe")) {
+      if (currentQ.id === "recurrence_evidence") {
+        this.chatData.recurrence = userText;
+        this.chatData.evidence = userText;
+      }
+      if (currentQ.id === "safety_anonymity") {
+        if (userText.toLowerCase().includes("unsafe") || userText.toLowerCase().includes("at risk")) {
+          this.chatData.isSafe = false;
           this.triggerUrgentSafetyEscalation();
           return;
         }
-      }
-      if (currentQ.id === "anonymity") {
-        this.chatData.anonymous = userText.toLowerCase().includes("yes") || userText.toLowerCase().includes("anonymous");
+        this.chatData.isSafe = true;
+        this.chatData.anonymous = userText.toLowerCase().includes("anonymous");
       }
     }
 
-    if (this.step < 7) {
+    if (this.step < 3) {
       const nextQ = this.factFindingQuestions[this.step];
       this.step++;
       this.addAiMessage(`
@@ -282,7 +274,7 @@ const ChatEngine = {
         </div>
       `);
     } else {
-      // Completed 7 Fact-Finding Questions -> Move to AI Classification (Step 4 & Part B)
+      // Completed 3 Fact-Finding Questions -> Move to AI Classification
       this.evaluateAIConcernClassification();
     }
   },

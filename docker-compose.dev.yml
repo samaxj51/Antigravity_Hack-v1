@@ -1,0 +1,18 @@
+# Development Override for live hot-reloading
+services:
+  backend:
+    command: npm run dev
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+  frontend:
+    build:
+      context: .
+      target: builder
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules

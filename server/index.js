@@ -1,4 +1,8 @@
+const preExistingDbHost = process.env.DB_HOST;
 require("dotenv").config();
+if (preExistingDbHost) {
+  process.env.DB_HOST = preExistingDbHost;
+}
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -16,6 +20,11 @@ app.use(express.json());
 // Initialize Database connection
 let pool = null;
 let useMockDb = false;
+
+// Health check endpoint for Docker & monitoring
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", service: "listen360-backend", db: useMockDb ? "mock" : "postgres" });
+});
 
 if (process.env.DB_HOST) {
   pool = new Pool({
@@ -344,7 +353,7 @@ async function callGeminiVertex(message, systemInstruction) {
       generationConfig: { maxOutputTokens: 500, temperature: 0.2 },
     });
 
-    const models = ["gemini-3.6-flash", "gemini-2.5-flash"];
+    const models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-3.6-flash"];
     for (const model of models) {
       console.log(`📡 [Backend AI] Calling Vertex model endpoint: ${model}...`);
       try {

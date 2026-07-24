@@ -1,0 +1,11 @@
+node_modules
+dist
+.vite
+.git
+.gitignore
+*.log
+.env
+server/node_modules
+architecture sample.docx
+PROMPT_ARCHITECT.md
+workflow.md

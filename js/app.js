@@ -13,29 +13,79 @@ const App = {
   },
 
   animateMetrics() {
-    // Count-up animation for 3 metrics cards
-    const animateVal = (id, start, end, duration, suffix = "") => {
+    this.updateEmployeeCaseMetrics();
+  },
+
+  updateEmployeeCaseMetrics() {
+    const cases = (typeof CASES_DATA !== 'undefined' && Array.isArray(CASES_DATA)) ? CASES_DATA : [];
+    const totalRaised = cases.length;
+    const submittedCount = cases.filter(c => c.status === "Submitted").length;
+    const ongoingCount = cases.filter(c => c.status === "Under Investigation" || c.status === "Under Initial Review" || c.status === "Assigned").length;
+    const resolvedCount = cases.filter(c => c.status === "Resolved" || c.status === "Closed").length;
+
+    const animateVal = (id, start, end, duration) => {
       const obj = document.getElementById(id);
       if (!obj) return;
       let startTimestamp = null;
       const step = (timestamp) => {
         if (!startTimestamp) startTimestamp = timestamp;
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const currentVal = progress * (end - start) + start;
-        const formatted = (end % 1 === 0 ? Math.floor(currentVal) : currentVal.toFixed(1));
-        obj.innerHTML = formatted + suffix;
-        if (progress < 1) {
-          window.requestAnimationFrame(step);
-        }
+        const currentVal = Math.floor(progress * (end - start) + start);
+        obj.innerHTML = currentVal;
+        if (progress < 1) window.requestAnimationFrame(step);
       };
       window.requestAnimationFrame(step);
     };
 
     setTimeout(() => {
-      animateVal("metricValPrograms", 0, 14, 800, " Programs");
-      animateVal("metricValConfidential", 0, 100, 1000, "%");
-      animateVal("metricValContacts", 0, 12, 1200, " On-Call");
-    }, 200);
+      animateVal("metricValTotalRaised", 0, totalRaised, 800);
+      animateVal("metricValSubmitted", 0, submittedCount, 800);
+      animateVal("metricValOngoing", 0, ongoingCount, 800);
+      animateVal("metricValResolved", 0, resolvedCount, 800);
+    }, 100);
+
+    this.renderRaisedCasesList();
+  },
+
+  renderRaisedCasesList() {
+    const container = document.getElementById("myRaisedCasesContainer");
+    if (!container) return;
+
+    const cases = (typeof CASES_DATA !== 'undefined' && Array.isArray(CASES_DATA)) ? CASES_DATA : [];
+
+    if (cases.length === 0) {
+      container.innerHTML = `<p style="font-size:0.78rem; color:var(--text-muted);">No cases raised yet.</p>`;
+      return;
+    }
+
+    container.innerHTML = cases.slice(0, 5).map(c => {
+      let badgeStyle = "background:rgba(31, 122, 140, 0.1); color:var(--primary-teal-dark); border:1px solid var(--border-accent);";
+      let statusIcon = "🔵";
+      if (c.status === "Resolved" || c.status === "Closed") {
+        badgeStyle = "background:var(--color-success-bg); color:var(--color-success); border:1px solid var(--color-success);";
+        statusIcon = "🟢";
+      } else if (c.status === "Under Investigation" || c.status === "Assigned") {
+        badgeStyle = "background:#FEF3C7; color:#92400E; border:1px solid #F59E0B;";
+        statusIcon = "🟠";
+      }
+
+      return `
+        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong style="font-family:'Courier New', monospace; font-size:0.84rem; color:var(--primary-teal);">${c.id}</strong>
+              <span style="${badgeStyle} padding:1px 6px; border-radius:8px; font-size:0.68rem; font-weight:800;">${statusIcon} ${c.status}</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-main); margin-top:2px;">
+              <strong>${c.category}</strong> • <span style="color:var(--text-muted);">${c.created || c.date || 'Recent'}</span>
+            </div>
+          </div>
+          <button class="chat-opt-btn" style="padding:4px 8px; font-size:0.72rem; border-color:var(--primary-teal); color:var(--primary-teal);" onclick="ChatEngine.trackTicketById('${c.id}')">
+            🔍 Track Status
+          </button>
+        </div>
+      `;
+    }).join('');
   },
 
   toggleTheme() {

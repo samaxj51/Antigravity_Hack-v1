@@ -95,22 +95,38 @@
           </p>
         </div>
 
-        <!-- 3 ANIMATED METRICS CARDS (WELLBEING & SUPPORT) -->
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-icon-box programs" aria-hidden="true">🌿</div>
-            <div id="metricValPrograms" class="metric-value">14</div>
-            <div class="metric-label">Active Wellbeing Programs</div>
+        <!-- CASE TRACKING METRIC CARDS GRID (EMPLOYEE VIEW) -->
+        <div class="metrics-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+          <div class="metric-card" tabindex="0" role="article" aria-label="Total Cases Raised">
+            <div class="metric-icon-box programs" style="background:rgba(31, 122, 140, 0.12); color:var(--primary-teal);" aria-hidden="true">📋</div>
+            <div id="metricValTotalRaised" class="metric-value">5</div>
+            <div class="metric-label">Cases Raised So Far</div>
           </div>
-          <div class="metric-card">
-            <div class="metric-icon-box confidential" aria-hidden="true">🔒</div>
-            <div id="metricValConfidential" class="metric-value">100%</div>
-            <div class="metric-label">Confidential & Anonymous</div>
+          <div class="metric-card" tabindex="0" role="article" aria-label="Cases Submitted">
+            <div class="metric-icon-box confidential" style="background:rgba(2, 132, 199, 0.12); color:#0284C7;" aria-hidden="true">📤</div>
+            <div id="metricValSubmitted" class="metric-value">2</div>
+            <div class="metric-label">Submitted & Pending</div>
           </div>
-          <div class="metric-card">
-            <div class="metric-icon-box mhfa" aria-hidden="true">🤝</div>
-            <div id="metricValContacts" class="metric-value">12</div>
-            <div class="metric-label">MHFA Support Responders</div>
+          <div class="metric-card" tabindex="0" role="article" aria-label="Ongoing Case Status">
+            <div class="metric-icon-box mhfa" style="background:rgba(217, 119, 6, 0.12); color:#D97706;" aria-hidden="true">⚙️</div>
+            <div id="metricValOngoing" class="metric-value">2</div>
+            <div class="metric-label">Ongoing Cases</div>
+          </div>
+          <div class="metric-card" tabindex="0" role="article" aria-label="Cases Resolved">
+            <div class="metric-icon-box" style="background:rgba(45, 106, 79, 0.12); color:#2D6A4F;" aria-hidden="true">✅</div>
+            <div id="metricValResolved" class="metric-value">1</div>
+            <div class="metric-label">Cases Resolved</div>
+          </div>
+        </div>
+
+        <!-- MY RAISED CASES LIVE TRACKING WIDGET -->
+        <div style="margin-top:14px; background:rgba(31, 122, 140, 0.04); border:1px solid var(--border-color); border-radius:10px; padding:12px;">
+          <div class="section-header" style="margin-bottom:8px;">
+            <h2 class="section-title" style="font-size:0.88rem; color:var(--primary-teal-dark);">📌 My Raised Cases & Live Status Tracking</h2>
+            <span style="font-size:0.72rem; color:var(--primary-teal); font-weight:700; cursor:pointer;" onclick="App.updateEmployeeCaseMetrics()">🔄 Refresh</span>
+          </div>
+          <div id="myRaisedCasesContainer">
+            <!-- Rendered dynamically by App.renderRaisedCasesList() in app.js -->
           </div>
         </div>
 
@@ -344,11 +360,11 @@
   </div>
 
   <!-- JAVASCRIPT LIBRARIES & MODULES -->
-  <script src="js/data.js?v=17.0"></script>
-  <script src="js/chat.js?v=17.0"></script>
-  <script src="js/wellbeing.js?v=17.0"></script>
-  <script src="js/dashboard.js?v=17.0"></script>
-  <script src="js/ai-intelligence.js?v=17.0"></script>
-  <script src="js/app.js?v=17.0"></script>
+  <script src="js/data.js?v=18.0"></script>
+  <script src="js/chat.js?v=18.0"></script>
+  <script src="js/wellbeing.js?v=18.0"></script>
+  <script src="js/dashboard.js?v=18.0"></script>
+  <script src="js/ai-intelligence.js?v=18.0"></script>
+  <script src="js/app.js?v=18.0"></script>
 </body>
 </html>

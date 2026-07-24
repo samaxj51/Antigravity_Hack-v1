@@ -756,6 +756,10 @@ const ChatEngine = {
       CASES_DATA.unshift(newCaseRecord);
     }
 
+    if (typeof App !== 'undefined' && App.updateEmployeeCaseMetrics) {
+      App.updateEmployeeCaseMetrics();
+    }
+
     this.showTypingIndicator();
 
     setTimeout(() => {

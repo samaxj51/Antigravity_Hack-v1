@@ -19,9 +19,8 @@ const App = {
   updateEmployeeCaseMetrics() {
     const cases = (typeof CASES_DATA !== 'undefined' && Array.isArray(CASES_DATA)) ? CASES_DATA : [];
     const totalRaised = cases.length;
-    const submittedCount = cases.filter(c => c.status === "Submitted").length;
-    const ongoingCount = cases.filter(c => c.status === "Under Investigation" || c.status === "Under Initial Review" || c.status === "Assigned").length;
     const resolvedCount = cases.filter(c => c.status === "Resolved" || c.status === "Closed").length;
+    const ongoingCount = totalRaised - resolvedCount;
 
     const animateVal = (id, start, end, duration) => {
       const obj = document.getElementById(id);
@@ -39,7 +38,6 @@ const App = {
 
     setTimeout(() => {
       animateVal("metricValTotalRaised", 0, totalRaised, 800);
-      animateVal("metricValSubmitted", 0, submittedCount, 800);
       animateVal("metricValOngoing", 0, ongoingCount, 800);
       animateVal("metricValResolved", 0, resolvedCount, 800);
     }, 100);

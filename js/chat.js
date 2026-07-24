@@ -183,6 +183,12 @@ const ChatEngine = {
   handleUserInput(text) {
     if (!text.trim()) return;
 
+    const lower = text.toLowerCase();
+    if (lower.includes("approve") || lower.includes("submit formal report") || lower.includes("submit report") || lower.includes("approve & submit")) {
+      this.submitFinalReport();
+      return;
+    }
+
     this.addUserMessage(text);
     this.showTypingIndicator();
 

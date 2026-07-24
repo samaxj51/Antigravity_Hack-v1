@@ -733,89 +733,97 @@ const ChatEngine = {
   // STEP 9 & 10: SUBMIT FINAL REPORT & GENERATE CASE REFERENCE NUMBER (LS360-2026-001245)
   submitFinalReport() {
     this.addUserMessage("Approve & Submit Formal Report");
+
+    const year = new Date().getFullYear();
+    const randomId = Math.floor(100000 + Math.random() * 900000);
+    const caseId = `LS360-${year}-${randomId}`;
+    const nowStr = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+
+    const newCaseRecord = {
+      id: caseId,
+      category: this.chatData.category || "Workplace Behaviour",
+      risk: (this.chatData.riskLevel || "Moderate").toLowerCase(),
+      created: nowStr,
+      status: "Submitted",
+      owner: "Unassigned (Ombudsperson)",
+      anonymous: this.chatData.anonymous,
+      summary: this.chatData.description || this.chatData.narrative || "Formal report submitted via AI intake.",
+      impact: this.chatData.impact || "Wellbeing and performance impact",
+      chatData: { ...this.chatData }
+    };
+
+    CASES_DATA.unshift(newCaseRecord);
+
     this.showTypingIndicator();
 
     setTimeout(() => {
       this.hideTypingIndicator();
 
-      const year = new Date().getFullYear();
-      const randomId = Math.floor(100000 + Math.random() * 900000);
-      const caseId = `LS360-${year}-${randomId}`;
-
-      const nowStr = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-
-      const newCaseRecord = {
-        id: caseId,
-        category: this.chatData.category || "Workplace Behaviour",
-        risk: (this.chatData.riskLevel || "Moderate").toLowerCase(),
-        created: nowStr,
-        status: "Submitted",
-        owner: "Unassigned (Ombudsperson)",
-        anonymous: this.chatData.anonymous,
-        summary: this.chatData.description || "Formal report submitted via AI intake.",
-        impact: this.chatData.impact || "Wellbeing and performance impact",
-        chatData: { ...this.chatData }
-      };
-
-      CASES_DATA.unshift(newCaseRecord);
-
       this.addAiMessage(`
-        <div class="final-submission-ticket-card" style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md); border-left:4px solid var(--primary-teal);">
+        <div class="final-submission-ticket-card" style="background:var(--bg-card); border:2px solid var(--primary-teal); border-radius:12px; padding:18px; margin-top:6px; box-shadow:var(--shadow-md); border-left:6px solid var(--primary-teal);">
+          
           <div style="display:flex; align-items:center; gap:10px; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
-            <div style="width:34px; height:34px; border-radius:50%; background:var(--color-success-bg); border:1.5px solid var(--color-success); color:var(--color-success); display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:800; flex-shrink:0;">
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--color-success-bg); border:1.5px solid var(--color-success); color:var(--color-success); display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800; flex-shrink:0;">
               ✅
             </div>
             <div>
-              <h3 style="font-size:1.02rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Your concern has been successfully submitted</h3>
-              <span style="font-size:0.75rem; color:var(--color-success); font-weight:700;">Securely recorded and routed to Ombudsperson.</span>
+              <h3 style="font-size:1.05rem; font-weight:800; color:var(--primary-teal-dark); margin:0;">Formal Case Report Submitted Successfully</h3>
+              <span style="font-size:0.75rem; color:var(--color-success); font-weight:700;">Confidential report recorded & dispatched to Ombudsperson.</span>
             </div>
           </div>
 
-          <!-- CASE REFERENCE NUMBER BOX -->
-          <div style="margin-top:12px; background:rgba(31, 122, 140, 0.05); border:1px solid var(--border-color); border-radius:8px; padding:12px; text-align:center;">
-            <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px;">
-              Case Reference Number
+          <!-- TICKET NUMBER CONFIRMATION BOX -->
+          <div style="margin-top:14px; background:rgba(31, 122, 140, 0.08); border:1.5px solid var(--primary-teal); border-radius:10px; padding:14px; text-align:center;">
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:0.8px; display:block; margin-bottom:4px;">
+              🎟️ YOUR CASE REFERENCE NUMBER (TICKET NUMBER)
             </span>
-            <div style="font-family:'Courier New', monospace; font-size:1.6rem; font-weight:900; color:var(--primary-teal); letter-spacing:1px;">
+            <div style="font-family:'Courier New', monospace; font-size:1.85rem; font-weight:900; color:var(--primary-teal); letter-spacing:2px; margin:4px 0;">
               ${caseId}
             </div>
+            <span style="font-size:0.72rem; color:var(--primary-teal-dark); font-weight:600;">
+              Keep this reference number safe to track case status anonymously.
+            </span>
           </div>
 
-          <!-- STEP 10: CASE TRACKING TIMELINE -->
+          <!-- SUMMARY RECAP INSIDE TICKET CARD -->
+          <div style="margin-top:12px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:8px; padding:10px; font-size:0.76rem; color:var(--text-main); display:flex; flex-direction:column; gap:4px;">
+            <div><strong style="color:var(--text-muted);">Category:</strong> ${this.chatData.category || 'Workplace Behaviour'}</div>
+            <div><strong style="color:var(--text-muted);">Submission Preference:</strong> ${this.chatData.anonymous ? 'Anonymous Report' : 'Named Report (Jordan Smith)'}</div>
+            <div><strong style="color:var(--text-muted);">Assigned Priority / Risk:</strong> ${this.chatData.riskLevel || 'Moderate'}</div>
+          </div>
+
+          <!-- CASE TRACKING LIFECYCLE TIMELINE -->
           <div style="margin-top:14px; background:var(--bg-panel-left); border:1px solid var(--border-color); border-radius:10px; padding:12px;">
-            <strong style="color:var(--primary-teal-dark); font-size:0.8rem; display:block; margin-bottom:8px;">📍 Case Tracking Status Lifecycle</strong>
+            <strong style="color:var(--primary-teal-dark); font-size:0.8rem; display:block; margin-bottom:8px;">📍 Case Tracking Lifecycle Status</strong>
             <div style="display:flex; flex-direction:column; gap:6px; font-size:0.74rem;">
               <div style="display:flex; align-items:center; gap:8px; color:var(--color-success); font-weight:700;">
                 <span>● Submitted</span> <span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">(${nowStr})</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
-                <span>○ Received</span>
+                <span>○ Received by Ombudsperson</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
-                <span>○ Under Initial Review (24h SLA)</span>
+                <span>○ Under Initial Assessment (24h SLA)</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
-                <span>○ Assigned to Investigator</span>
+                <span>○ Assigned to Senior Investigator</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
-                <span>○ Under Investigation</span>
+                <span>○ Investigation & Remediation Action</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
-                <span>○ Action / Resolution</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:8px; color:var(--text-muted);">
-                <span>○ Closed</span>
+                <span>○ Case Closed & Resolution Report</span>
               </div>
             </div>
           </div>
 
           <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px;">
             <button class="chat-opt-btn" style="background:var(--primary-teal); color:#FFFFFF; font-weight:800; border:none; text-align:center; padding:10px; border-radius:6px; font-size:0.82rem; cursor:pointer;" onclick="ChatEngine.copyTicketNumber('${caseId}')">
-              📄 Copy Case Reference Number
+              📄 Copy Case Reference Number (${caseId})
             </button>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.downloadReportPDF('${caseId}')">
-                📥 Download Report File
+                📥 Download Case File
               </button>
               <button class="chat-opt-btn" style="background:var(--bg-panel-left); color:var(--primary-teal-dark); border:1px solid var(--border-accent); font-weight:700; text-align:center; padding:8px; border-radius:6px; font-size:0.78rem; cursor:pointer;" onclick="ChatEngine.trackTicketById('${caseId}')">
                 🔍 Live Track Status
@@ -828,7 +836,13 @@ const ChatEngine = {
         </div>
       `);
       this.step = 13;
-    }, 1200);
+
+      // FORCE SCROLL TO BOTTOM
+      const container = document.getElementById("chatMessages");
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 200);
   },
 
   startFormalReportingFlow() {

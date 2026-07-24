@@ -752,7 +752,9 @@ const ChatEngine = {
       chatData: { ...this.chatData }
     };
 
-    CASES_DATA.unshift(newCaseRecord);
+    if (typeof CASES_DATA !== 'undefined' && Array.isArray(CASES_DATA)) {
+      CASES_DATA.unshift(newCaseRecord);
+    }
 
     this.showTypingIndicator();
 

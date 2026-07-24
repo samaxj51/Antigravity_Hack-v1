@@ -328,7 +328,9 @@ const DashboardModule = {
         title: "Owner Reassigned",
         desc: `Reassigned to ${newOwner} via AI-assisted routing.`
       });
-      alert(`Case ${caseId} reassigned to ${newOwner}`);
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`Case ${caseId} reassigned to ${newOwner}`, 'success');
+      }
       this.renderCasesTable();
       this.openCaseDetails(caseId);
     }
@@ -368,7 +370,9 @@ const DashboardModule = {
         title: "Case Resolved & Closed",
         desc: "Investigation completed and remedial actions recorded."
       });
-      alert(`Case ${caseId} marked as Resolved.`);
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`Case ${caseId} marked as Resolved.`, 'success');
+      }
       WellbeingModule.closeModal();
       this.renderCasesTable();
       this.renderMetrics();

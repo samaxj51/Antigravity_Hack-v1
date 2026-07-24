@@ -826,6 +826,21 @@ app.post("/api/concern/cases", async (req, res) => {
   res.json({ success: true, case: newCase });
 });
 
+// 9.5 Retrieve All Concern Cases
+app.get("/api/concern/cases", async (req, res) => {
+  if (!useMockDb) {
+    try {
+      const result = await pool.query("SELECT * FROM concern_cases ORDER BY created_at DESC");
+      if (result.rows && result.rows.length > 0) {
+        return res.json(result.rows);
+      }
+    } catch (err) {
+      console.error("❌ DB error fetching concern cases:", err.message);
+    }
+  }
+  return res.json(mockConcernCases.length > 0 ? mockConcernCases : mockReports);
+});
+
 // 10. Track/Retrieve Concern Case by ID
 app.get("/api/concern/cases/:caseId", async (req, res) => {
   const { caseId } = req.params;

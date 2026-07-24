@@ -91,6 +91,20 @@ async function runTests() {
       process.exit(1);
     }
 
+    // 6. Test Fetch Concern Cases
+    console.log("\n🧪 Testing GET /api/concern/cases...");
+    const casesRes = await fetch(`${baseUrl}/api/concern/cases`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const casesList = await casesRes.json();
+    console.log(`🔎 Found ${Array.isArray(casesList) ? casesList.length : 0} concern cases in database/store.`);
+    if (Array.isArray(casesList)) {
+      console.log("✅ Fetch Concern Cases Succeeded.");
+    } else {
+      console.error("❌ Fetch Concern Cases Failed:", casesList);
+      process.exit(1);
+    }
+
     console.log("\n🎉 All tests passed successfully!");
   } catch (err) {
     console.error("❌ Test execution failed with error:", err.message);

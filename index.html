@@ -78,6 +78,20 @@
 
   <!-- MOCK IDP REDIRECTION MODAL -->
   <div id="mockIdpModal" class="idp-overlay" style="display:none;">
+    <!-- FLOATING FEATURE BUBBLES BACKGROUND (40% Opacity) -->
+    <div class="sso-floating-bubbles-bg" aria-hidden="true">
+      <div class="sso-bubble bubble-1">🌿 Well-Being Check</div>
+      <div class="sso-bubble bubble-2">🤖 AI Companion 24X7</div>
+      <div class="sso-bubble bubble-3">🤝 Mental Health Support 24X7</div>
+      <div class="sso-bubble bubble-4">🔎 Raise a Concern and Full Tracking</div>
+      <div class="sso-bubble bubble-5">🔒 100% Private and Confidential</div>
+      <div class="sso-bubble bubble-6">📜 Policy References</div>
+      <div class="sso-bubble bubble-7">🎓 Well-Being Trainings</div>
+      <div class="sso-bubble bubble-8">🛡️ Dedicated Portal for Investigators</div>
+      <div class="sso-bubble bubble-9">⚡ Automated Workflows</div>
+      <div class="sso-bubble bubble-10">📊 Dedicated Dashboards and Reporting</div>
+    </div>
+
     <div class="idp-card">
       <h3>Corporate Identity Provider</h3>
       <p>Simulating secure OIDC authentication...</p>
@@ -465,7 +479,7 @@
           </div>
 
           <div class="confidential-shield-tag">
-            🔒 256-Bit Encrypted • Confidential & Secure
+            🔒 Confidential & Secure
           </div>
         </div>
 
@@ -705,12 +719,12 @@
   <div id="wellbeingModal"
     style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:16px;">
     <div
-      style="background:white; border-radius:24px; max-width:500px; width:100%; padding:24px; border:1px solid #E2E8F0; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); display:flex; flex-direction:column; max-height:85vh;">
+      style="background:var(--bg-card); color:var(--text-main); border-radius:24px; max-width:500px; width:100%; padding:24px; border:1px solid var(--border-color); box-shadow:var(--shadow-lg); display:flex; flex-direction:column; max-height:85vh;">
       <div
-        style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #F1F5F9; padding-bottom:12px; margin-bottom:16px;">
-        <h3 id="modalTitle" style="font-size:1.05rem; font-weight:800; color:#0F172A; margin:0;"></h3>
+        style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:16px;">
+        <h3 id="modalTitle" style="font-size:1.05rem; font-weight:800; color:var(--text-main); margin:0;"></h3>
         <button onclick="App.closeTipsModal()"
-          style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748B;">✕</button>
+          style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
       </div>
 
       <div id="modalItems"
@@ -718,12 +732,12 @@
       </div>
 
       <div
-        style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #F1F5F9; padding-top:12px; margin-top:16px;">
+        style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:12px; margin-top:16px;">
         <button onclick="App.closeTipsModal(); document.getElementById('chatInput').focus();"
-          style="background:#1F7A8C; color:white; border:none; padding:10px 16px; border-radius:12px; font-weight:700; font-size:0.78rem; cursor:pointer;">🤖
+          style="background:var(--primary-teal); color:white; border:none; padding:10px 16px; border-radius:12px; font-weight:700; font-size:0.78rem; cursor:pointer;">🤖
           Talk to AI</button>
         <button onclick="App.closeTipsModal()"
-          style="background:#F1F5F9; color:#475569; border:none; padding:10px 16px; border-radius:12px; font-weight:700; font-size:0.78rem; cursor:pointer;">Close</button>
+          style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); padding:10px 16px; border-radius:12px; font-weight:700; font-size:0.78rem; cursor:pointer;">Close</button>
       </div>
     </div>
   </div>

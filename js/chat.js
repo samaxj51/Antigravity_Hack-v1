@@ -483,7 +483,7 @@ const ChatEngine = {
         <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
           <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#E63946; color:#991B1B; font-weight:800; padding:8px 14px; text-align:left;" onclick="WellbeingModule.openMHFAConnectModal()">🌿 Talk to Mental Health First Aider (MHFA) Right Now</button>
           <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#0284C7; color:#0369A1; font-weight:700; padding:8px 14px; text-align:left;" onclick="WellbeingModule.openMHFAConnectModal()">📅 Book Urgent Confidential Counselling</button>
-          <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#D97706; color:#92400E; font-weight:700; padding:8px 14px; text-align:left;" onclick="alert('Connecting to 24/7 Helpline: 1-800-WELLBEING')">📞 Call 24/7 Crisis Helpline</button>
+          <button class="chat-opt-btn" style="background:#FFFFFF; border-color:#D97706; color:#92400E; font-weight:700; padding:8px 14px; text-align:left;" onclick="App.showToast('Connecting to 24/7 Helpline: 1-800-WELLBEING', 'info')">📞 Call 24/7 Crisis Helpline</button>
           <button class="chat-opt-btn" style="background:#FFFFFF; border-color:var(--primary-teal); color:var(--primary-teal); font-weight:700; padding:8px 14px; text-align:left;" onclick="ChatEngine.evaluateAIConcernClassification()">📋 Continue Formal Reporting Process</button>
         </div>
       </div>
@@ -1149,20 +1149,379 @@ const ChatEngine = {
           <div><strong style="color:var(--text-muted);">Confidentiality:</strong> Confidential</div>
         </div>
 
-        <div style="margin-top:12px; font-size:0.72rem; color:var(--text-dim); display:flex; justify-content:space-between; padding-top:6px; border-top:1px dashed var(--border-color);">
+        <div style="margin-top:12px; font-size:0.72rem; color:var(--text-dim); display:flex; justify-content:space-between; align-items:center; padding-top:6px; border-top:1px dashed var(--border-color);">
           <span>SLA: 24h Review Guarantee</span>
-          <span>Ref: <code>${reportId}</code></span>
+          <button onclick="ChatEngine.promptCaseTracking('${reportId}')" style="background:var(--primary-teal); color:#FFFFFF; border:none; padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px;">🚀 View Full Journey</button>
         </div>
       </div>
     `);
   },
 
+  async fetchAllCases() {
+    let casesList = [];
+
+    // 1. Fetch from /api/concern/cases
+    try {
+      const res = await fetch("/api/concern/cases");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          casesList = casesList.concat(data);
+        }
+      }
+    } catch (e) {
+      console.warn("⚠️ API fetch for /api/concern/cases failed:", e);
+    }
+
+    // 2. Fetch from /api/reports
+    try {
+      const res = await fetch("/api/reports");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          data.forEach(r => {
+            if (!casesList.some(c => c.id && c.id.toUpperCase() === r.id.toUpperCase())) {
+              casesList.push(r);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("⚠️ API fetch for /api/reports failed:", e);
+    }
+
+    // 3. Fall back / merge with INITIAL_SAMPLE_CASES
+    if (typeof INITIAL_SAMPLE_CASES !== 'undefined' && Array.isArray(INITIAL_SAMPLE_CASES)) {
+      INITIAL_SAMPLE_CASES.forEach(sc => {
+        if (!casesList.some(c => c.id && c.id.toUpperCase() === sc.id.toUpperCase())) {
+          casesList.push(sc);
+        }
+      });
+    }
+
+    // 4. Fall back / merge with DashboardModule.cases if present
+    if (typeof DashboardModule !== 'undefined' && DashboardModule.cases && Array.isArray(DashboardModule.cases)) {
+      DashboardModule.cases.forEach(dc => {
+        if (!casesList.some(c => c.id && c.id.toUpperCase() === dc.id.toUpperCase())) {
+          casesList.push(dc);
+        }
+      });
+    }
+
+    return casesList;
+  },
+
+  async promptCaseTracking(targetCaseId = null) {
+    const modal = document.getElementById("generalModal");
+    const content = document.getElementById("modalInnerContent");
+    if (!modal || !content) return;
+
+    // Show loading state in modal
+    content.innerHTML = `
+      <div style="padding:40px; text-align:center;">
+        <div style="font-size:2rem; animation: spin 1s linear infinite; display:inline-block; margin-bottom:12px;">⌛</div>
+        <h3 style="color:var(--primary-teal); font-weight:700;">Loading Case Tracker...</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted);">Fetching your submitted reports and audit timeline.</p>
+      </div>
+    `;
+    modal.classList.add("active");
+
+    const cases = await this.fetchAllCases();
+    this.cachedCases = cases;
+
+    if (targetCaseId) {
+      this.renderCaseJourneyModal(targetCaseId);
+    } else {
+      this.renderCaseTrackerModal(cases);
+    }
+  },
+
+  renderCaseTrackerModal(cases = []) {
+    const modal = document.getElementById("generalModal");
+    const content = document.getElementById("modalInnerContent");
+    if (!modal || !content) return;
+
+    this.cachedCases = cases;
+
+    const getStatusStyle = (status) => {
+      const s = (status || "").toLowerCase();
+      if (s.includes("resolve") || s.includes("close")) {
+        return { bg: "#E8F5E9", color: "#2E7D32", border: "#C8E6C9", label: "● Resolved" };
+      }
+      if (s.includes("investigat") || s.includes("in progress")) {
+        return { bg: "#F3E8FF", color: "#6B21A8", border: "#E9D5FF", label: "● Under Investigation" };
+      }
+      if (s.includes("review") || s.includes("assigned")) {
+        return { bg: "#E0F2FE", color: "#0369A1", border: "#BAE6FD", label: "● Under Initial Review" };
+      }
+      return { bg: "#FEF3C7", color: "#D97706", border: "#FDE68A", label: "● Submitted / Pending" };
+    };
+
+    const cardsHtml = cases.length === 0 ? `
+      <div style="text-align:center; padding:30px 20px; color:var(--text-muted);">
+        <div style="font-size:2.5rem; margin-bottom:8px;">📭</div>
+        <p style="font-weight:700;">No cases found.</p>
+        <p style="font-size:0.8rem; margin-top:4px;">You haven't submitted any reports yet or no matching records were found.</p>
+      </div>
+    ` : cases.map(c => {
+      const st = getStatusStyle(c.status);
+      const createdDate = c.created_at || c.created || c.date || "Recent";
+      const risk = c.risk_level || c.risk || "Moderate";
+      const owner = c.owner || c.assigned || "Ethics & Compliance Team";
+      const desc = c.narrative || c.description || c.aiSummary || "No description provided.";
+      const descSnippet = desc.length > 120 ? desc.substring(0, 120) + "..." : desc;
+
+      return `
+        <div class="case-tracker-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:var(--shadow-sm); transition:transform 0.15s ease, box-shadow 0.15s ease;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:800; color:var(--primary-teal); font-size:0.95rem; font-family:monospace;">${c.id}</span>
+                <span style="background:var(--bg-panel-left); border:1px solid var(--border-color); padding:2px 8px; border-radius:12px; font-size:0.72rem; font-weight:600; color:var(--text-muted);">${c.category || "General Concern"}</span>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Submitted: ${createdDate} • Confidentiality: ${c.anonymous ? "Anonymous" : "Confidential"}</div>
+            </div>
+            <span style="background:${st.bg}; color:${st.color}; border:1px solid ${st.border}; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:800; white-space:nowrap;">
+              ${st.label}
+            </span>
+          </div>
+
+          <div style="font-size:0.82rem; color:var(--text-main); line-height:1.45; margin-bottom:12px; background:var(--bg-panel-left); padding:10px; border-radius:8px; border-left:3px solid var(--primary-teal);">
+            ${descSnippet}
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:8px; border-top:1px dashed var(--border-color);">
+            <div style="font-size:0.75rem; color:var(--text-muted);">
+              <strong>Assigned:</strong> ${owner} &nbsp;|&nbsp; <strong>Risk:</strong> ${risk}
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button onclick="ChatEngine.copyTicketNumber('${c.id}')" style="background:var(--bg-panel-left); color:var(--text-main); border:1px solid var(--border-color); padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;">📋 Copy Ref</button>
+              <button onclick="ChatEngine.renderCaseJourneyModal('${c.id}')" style="background:var(--primary-teal); color:#FFFFFF; border:none; padding:6px 14px; border-radius:8px; font-size:0.78rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px;">🚀 View Full Journey</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    content.innerHTML = `
+      <div style="display:flex; flex-direction:column; max-height:85vh;">
+        <!-- Modal Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 20px; border-bottom:1px solid var(--border-color);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size:1.5rem;">🔎</div>
+            <div>
+              <h3 style="margin:0; font-size:1.1rem; color:var(--primary-teal); font-weight:800;">Case Tracker & Report Journey</h3>
+              <p style="margin:2px 0 0 0; font-size:0.76rem; color:var(--text-muted);">Track your raised concerns, live status updates, and full investigation journey.</p>
+            </div>
+          </div>
+          <button class="modal-close-btn" onclick="WellbeingModule.closeModal()" aria-label="Close Modal" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div style="padding:12px 20px; background:var(--bg-panel-left); border-bottom:1px solid var(--border-color); display:flex; gap:10px; align-items:center;">
+          <div style="position:relative; flex:1;">
+            <input type="text" id="caseTrackerSearchInput" placeholder="Search by Case ID, category, or status..." 
+                   onkeyup="ChatEngine.filterCaseTrackerList(this.value)"
+                   style="width:100%; padding:8px 12px 8px 32px; border-radius:10px; border:1px solid var(--border-color); font-size:0.82rem; background:var(--bg-card); color:var(--text-main);" />
+            <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:0.85rem; color:var(--text-muted);">🔍</span>
+          </div>
+          <button onclick="ChatEngine.promptCaseTracking()" style="background:var(--bg-card); border:1px solid var(--border-color); padding:8px 14px; border-radius:10px; font-size:0.78rem; font-weight:700; color:var(--primary-teal); cursor:pointer;">🔄 Refresh</button>
+        </div>
+
+        <!-- Case Cards List -->
+        <div id="caseTrackerListContainer" style="padding:18px 20px; overflow-y:auto; flex:1;">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+    modal.classList.add("active");
+  },
+
+  filterCaseTrackerList(query) {
+    const q = (query || "").toLowerCase().trim();
+    if (!this.cachedCases) return;
+    const filtered = this.cachedCases.filter(c => {
+      const text = `${c.id} ${c.category} ${c.status} ${c.narrative || ""} ${c.description || ""} ${c.owner || ""}`.toLowerCase();
+      return text.includes(q);
+    });
+    const container = document.getElementById("caseTrackerListContainer");
+    if (container) {
+      this.renderCaseTrackerModal(filtered);
+      const searchInput = document.getElementById("caseTrackerSearchInput");
+      if (searchInput) {
+        searchInput.value = query;
+        searchInput.focus();
+      }
+    }
+  },
+
+  renderCaseJourneyModal(caseIdOrObj) {
+    let c = null;
+    if (typeof caseIdOrObj === 'object' && caseIdOrObj !== null) {
+      c = caseIdOrObj;
+    } else if (this.cachedCases) {
+      c = this.cachedCases.find(item => item.id && item.id.toUpperCase() === String(caseIdOrObj).toUpperCase());
+    }
+
+    if (!c && typeof INITIAL_SAMPLE_CASES !== 'undefined') {
+      c = INITIAL_SAMPLE_CASES.find(item => item.id && item.id.toUpperCase() === String(caseIdOrObj).toUpperCase());
+    }
+
+    if (!c) {
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`Case ${caseIdOrObj} could not be retrieved.`, 'error');
+      }
+      return;
+    }
+
+    const modal = document.getElementById("generalModal");
+    const content = document.getElementById("modalInnerContent");
+    if (!modal || !content) return;
+
+    const statusStr = (c.status || "Submitted").toLowerCase();
+    const createdDate = c.created_at || c.created || c.date || new Date().toLocaleString();
+    const ownerStr = c.owner || c.assigned || "Ombudsperson & Ethics Office";
+    const riskStr = c.risk_level || c.risk || "Moderate";
+    const fullText = c.narrative || c.description || c.aiSummary || "No narrative details logged.";
+
+    // Build timeline milestones dynamically if not present
+    let timeline = c.timeline;
+    if (!timeline || !Array.isArray(timeline) || timeline.length === 0) {
+      const isResolved = statusStr.includes("resolve") || statusStr.includes("close");
+      const isInvestigating = statusStr.includes("investigat") || statusStr.includes("progress") || isResolved;
+      const isAssigned = statusStr.includes("assign") || statusStr.includes("review") || isInvestigating;
+
+      timeline = [
+        {
+          title: "📝 Report Submitted",
+          date: createdDate,
+          desc: "Case logged successfully via LisTEN360 confidential companion. Encrypted & timestamped.",
+          completed: true
+        },
+        {
+          title: "🤖 AI Risk Classification & Category Triage",
+          date: createdDate,
+          desc: `Automated assessment completed. Risk level set to ${riskStr}. Category: ${c.category || "General Concern"}.`,
+          completed: true
+        },
+        {
+          title: "🛡️ Investigator Assignment",
+          date: isAssigned ? createdDate : "Pending Assignment",
+          desc: `Assigned to: ${ownerStr}. Guaranteed 24h SLA review standard.`,
+          completed: isAssigned
+        },
+        {
+          title: "🔍 Formal Fact-Finding & Witness Review",
+          date: isInvestigating ? "In Progress" : "Awaiting Investigation",
+          desc: "Confidential interviews, evidence log review, and impartial compliance examination.",
+          completed: isInvestigating
+        },
+        {
+          title: "✅ Resolution & Closing Summary",
+          date: isResolved ? "Completed" : "Target: Within 5 Business Days",
+          desc: isResolved ? "Investigation concluded. Remedial actions communicated to involved parties." : "Formal case resolution and feedback update.",
+          completed: isResolved
+        }
+      ];
+    }
+
+    const timelineHtml = timeline.map((step, idx) => {
+      const isDone = step.completed || idx === 0 || idx === 1;
+      const icon = isDone ? "✅" : (idx === 2 ? "🟣" : "⚪");
+      const badgeBg = isDone ? "var(--color-success-bg, #E8F5E9)" : "var(--bg-panel-left)";
+      const badgeColor = isDone ? "var(--color-success, #2E7D32)" : "var(--text-muted)";
+
+      return `
+        <div style="display:flex; gap:14px; position:relative; padding-bottom:20px;">
+          ${idx < timeline.length - 1 ? `<div style="position:absolute; left:15px; top:28px; bottom:0; width:2px; background:${isDone ? 'var(--primary-teal)' : 'var(--border-color)'};"></div>` : ''}
+          <div style="width:32px; height:32px; border-radius:50%; background:${badgeBg}; color:${badgeColor}; display:flex; align-items:center; justify-content:center; font-size:0.9rem; z-index:1; flex-shrink:0; border:1px solid ${isDone ? '#A5D6A7' : 'var(--border-color)'};">
+            ${icon}
+          </div>
+          <div style="flex:1; background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <strong style="font-size:0.88rem; color:var(--text-main);">${step.title}</strong>
+              <span style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">${step.date}</span>
+            </div>
+            <p style="margin:0; font-size:0.78rem; color:var(--text-muted); line-height:1.4;">${step.desc}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    content.innerHTML = `
+      <div style="display:flex; flex-direction:column; max-height:88vh;">
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border-color); background:var(--bg-panel-left);">
+          <button onclick="ChatEngine.promptCaseTracking()" style="background:var(--bg-card); border:1px solid var(--border-color); padding:6px 12px; border-radius:8px; font-size:0.78rem; font-weight:700; color:var(--primary-teal); cursor:pointer; display:flex; align-items:center; gap:4px;">
+            ← Back to Case List
+          </button>
+          <div style="text-align:center;">
+            <span style="font-family:monospace; font-weight:800; color:var(--primary-teal); font-size:1.05rem;">${c.id}</span>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Confidential Case Journey & Audit Trail</div>
+          </div>
+          <button class="modal-close-btn" onclick="WellbeingModule.closeModal()" aria-label="Close Modal" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+        </div>
+
+        <div style="padding:20px; overflow-y:auto; flex:1;">
+          <!-- Case Summary Overview Box -->
+          <div style="background:var(--bg-card); border:1.5px solid var(--border-accent); border-radius:14px; padding:16px; margin-bottom:20px; box-shadow:var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
+              <div>
+                <span style="background:var(--primary-teal); color:#FFF; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:800;">${c.category || "General Concern"}</span>
+                <span style="font-size:0.76rem; color:var(--text-muted); margin-left:8px;">Risk: <strong>${riskStr}</strong></span>
+              </div>
+              <span style="background:#E0F2FE; color:#0369A1; border:1px solid #BAE6FD; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:800;">
+                Status: ${c.status || "Submitted"}
+              </span>
+            </div>
+            
+            <div style="margin-top:10px; font-size:0.8rem; color:var(--text-main); line-height:1.5;">
+              <strong style="color:var(--text-muted);">Submitted Narrative:</strong><br/>
+              <div style="background:var(--bg-panel-left); padding:10px; border-radius:8px; margin-top:4px; font-size:0.78rem; border-left:3px solid var(--primary-teal);">
+                ${fullText}
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:12px; font-size:0.74rem; color:var(--text-muted);">
+              <span>Assigned Lead: <strong>${ownerStr}</strong></span>
+              <span>Confidentiality: <strong>${c.anonymous ? "Anonymous Flag Active" : "Confidential Employee Record"}</strong></span>
+            </div>
+          </div>
+
+          <!-- Journey Stepper Title -->
+          <h4 style="margin:0 0 14px 0; font-size:0.92rem; color:var(--primary-teal); font-weight:800; display:flex; align-items:center; gap:6px;">
+            🧭 Case Lifecycle & Milestone Timeline
+          </h4>
+
+          <!-- Timeline Stepper -->
+          <div style="padding-left:4px;">
+            ${timelineHtml}
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div style="padding:12px 20px; border-top:1px solid var(--border-color); background:var(--bg-panel-left); display:flex; justify-content:space-between; align-items:center;">
+          <button onclick="ChatEngine.downloadReportPDF('${c.id}')" style="background:var(--bg-card); border:1px solid var(--border-color); padding:8px 14px; border-radius:8px; font-size:0.78rem; font-weight:700; color:var(--primary-teal); cursor:pointer;">📥 Download Report PDF</button>
+          <div style="display:flex; gap:8px;">
+            <button onclick="ChatEngine.copyTicketNumber('${c.id}')" style="background:var(--bg-card); border:1px solid var(--border-color); padding:8px 14px; border-radius:8px; font-size:0.78rem; font-weight:700; color:var(--text-main); cursor:pointer;">📋 Copy Case ID</button>
+            <button onclick="WellbeingModule.closeModal()" style="background:var(--primary-teal); color:#FFFFFF; border:none; padding:8px 16px; border-radius:8px; font-size:0.78rem; font-weight:800; cursor:pointer;">Done</button>
+          </div>
+        </div>
+      </div>
+    `;
+    modal.classList.add("active");
+  },
+
   copyTicketNumber(reportId) {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(reportId);
-      alert(`Case Reference ${reportId} copied to clipboard!`);
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`Case Reference ${reportId} copied to clipboard!`, 'success');
+      }
     } else {
-      alert(`Case Reference: ${reportId}`);
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast(`Case Reference: ${reportId}`, 'info');
+      }
     }
   },
 
@@ -1175,7 +1534,9 @@ const ChatEngine = {
     a.href = URL.createObjectURL(blob);
     a.download = `Confidential_Report_${reportId}.txt`;
     a.click();
-    alert(`Report ${reportId} downloaded!`);
+    if (typeof App !== 'undefined' && App.showToast) {
+      App.showToast(`Report ${reportId} downloaded successfully!`, 'success');
+    }
   },
 
   useSuggestedReply(text) {
@@ -1207,7 +1568,9 @@ const ChatEngine = {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("🗣️ Web Speech Dictation is not supported by your browser. Please use Google Chrome, Edge, or Safari.");
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast("🗣️ Web Speech Dictation is not supported by your browser. Please use Google Chrome, Edge, or Safari.", 'warning');
+      }
       return;
     }
 
@@ -1256,7 +1619,9 @@ const ChatEngine = {
       recognition.start();
     } catch (err) {
       console.error("❌ Dictation initialization failed:", err);
-      alert("Could not start voice dictation. Please check microphone permissions.");
+      if (typeof App !== 'undefined' && App.showToast) {
+        App.showToast("Could not start voice dictation. Please check microphone permissions.", 'error');
+      }
     }
   },
 

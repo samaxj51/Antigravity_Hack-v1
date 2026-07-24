@@ -458,10 +458,14 @@ const ReportingModule = {
         if (!this._lastExtractText) return;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(this._lastExtractText)
-                .then(() => alert("Copied to clipboard!"))
-                .catch(() => alert("Could not copy automatically — please select and copy the text manually."));
+                .then(() => {
+                    if (typeof App !== 'undefined' && App.showToast) App.showToast("Copied to clipboard!", 'success');
+                })
+                .catch(() => {
+                    if (typeof App !== 'undefined' && App.showToast) App.showToast("Could not copy automatically — please select and copy the text manually.", 'warning');
+                });
         } else {
-            alert("Clipboard access isn't available here — please select and copy the text manually.");
+            if (typeof App !== 'undefined' && App.showToast) App.showToast("Clipboard access isn't available here — please select and copy the text manually.", 'warning');
         }
     },
 

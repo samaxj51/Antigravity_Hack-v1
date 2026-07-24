@@ -68,7 +68,9 @@ const WellbeingModule = {
   },
 
   connectMHFA(name) {
-    alert(`Connecting confidential session with ${name}... You will receive an instant chat prompt shortly.`);
+    if (typeof App !== 'undefined' && App.showToast) {
+      App.showToast(`Connecting confidential session with ${name}... You will receive an instant chat prompt shortly.`, 'info');
+    }
     this.closeModal();
     ChatEngine.addAiMessage(`🔒 <em>Confidential session requested with ${name}. Connection code generated: MHFA-SESSION-884.</em>`);
   },
@@ -106,7 +108,9 @@ const WellbeingModule = {
   },
 
   confirmCounseling() {
-    alert("Appointment successfully booked! Confirmation details sent securely.");
+    if (typeof App !== 'undefined' && App.showToast) {
+      App.showToast("Appointment successfully booked! Confirmation details sent securely.", 'success');
+    }
     this.closeModal();
     ChatEngine.addAiMessage("📅 <strong>Appointment Confirmed:</strong> Your confidential counseling session has been scheduled. Details emailed via secure gateway.");
   },

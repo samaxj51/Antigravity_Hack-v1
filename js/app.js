@@ -91,7 +91,7 @@ const App = {
         localStorage.setItem("user", JSON.stringify(data.user));
         this.init();
       } else {
-        alert("SSO authentication failed");
+        App.showToast("SSO authentication failed", 'error');
       }
     } catch (err) {
       console.error("SSO Error:", err);
@@ -203,7 +203,7 @@ const App = {
     const modal = document.getElementById("generalModal");
     const content = document.getElementById("modalInnerContent");
     if (!modal || !content) {
-      alert("This area is exclusively for investigators. Please login with your investigator login credentials.");
+      App.showToast("This area is exclusively for investigators. Please login with your investigator login credentials.", 'warning');
       return;
     }
 
@@ -319,8 +319,8 @@ const App = {
           <strong>Interactive Learning Exercise:</strong><br/>
           Select the best action when observing workplace distress:
           <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-            <button class="chat-opt-btn" onclick="alert('Correct! Empathetic listening without judgement builds psychological safety.')">A) Offer empathetic listening and share listen360 support resources.</button>
-            <button class="chat-opt-btn" onclick="alert('Try again. Immediate reporting is best done with consent or through confidential channels.')">B) Dismiss the concern as temporary stress.</button>
+            <button class="chat-opt-btn" onclick="App.showToast('Correct! Empathetic listening without judgement builds psychological safety.', 'success')">A) Offer empathetic listening and share listen360 support resources.</button>
+            <button class="chat-opt-btn" onclick="App.showToast('Try again. Immediate reporting is best done with consent or through confidential channels.', 'warning')">B) Dismiss the concern as temporary stress.</button>
           </div>
         </div>
       </div>
@@ -596,6 +596,44 @@ const App = {
       const val = input.value.trim();
       input.value = "";
       ChatEngine.handleUserInput(val);
+    }
+  },
+
+  showToast(message, type = 'info', duration = 4000) {
+    try {
+      let container = document.getElementById("toastContainer");
+      if (!container) {
+        container = document.createElement("div");
+        container.id = "toastContainer";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+      }
+
+      const icons = {
+        success: "✅",
+        info: "ℹ️",
+        warning: "⚠️",
+        error: "❌"
+      };
+
+      const toast = document.createElement("div");
+      toast.className = `toast-notification ${type}`;
+      toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || "ℹ️"}</span>
+        <div class="toast-content">${message}</div>
+        <button class="toast-close-btn" onclick="this.parentElement.remove()" aria-label="Close Toast">✕</button>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add("hide");
+        setTimeout(() => {
+          if (toast.parentElement) toast.remove();
+        }, 300);
+      }, duration);
+    } catch (err) {
+      console.warn("⚠️ Toast display fallback:", message, err);
     }
   }
 };

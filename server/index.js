@@ -400,13 +400,13 @@ async function callGeminiVertex(message, systemInstruction) {
 }
 
 async function callGeminiApiKey(message, systemInstruction) {
-  console.log("🔍 [Backend AI] Attempting Google Generative AI API call (Primary: gemini-3.6-flash, Fallback: gemini-2.5-flash)...");
+  console.log("🔍 [Backend AI] Attempting Google Generative AI API call...");
   if (!geminiApiKey) {
     console.warn("⚠️ [Backend AI] GEMINI_API_KEY is not defined in environment.");
     return null;
   }
 
-  const modelsToTry = ["gemini-3.6-flash", "gemini-2.5-flash"];
+  const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.5-flash"];
 
   // 1. Try via direct REST API (generativelanguage.googleapis.com)
   for (const modelName of modelsToTry) {
@@ -438,6 +438,10 @@ async function callGeminiApiKey(message, systemInstruction) {
         console.log(`✅ [Backend AI] Live response received via Generative Language API (${modelName})!`);
         return text;
       } else if (resData.error) {
+        if (resData.error.message && resData.error.message.includes("leaked")) {
+          console.error("🚨 [Backend AI] CRITICAL: Your GEMINI_API_KEY was reported as leaked and revoked by Google. Please generate a new key at https://aistudio.google.com/app/apikey");
+          break;
+        }
         console.error(`❌ [Backend AI] REST API error [${modelName}]: ${resData.error.message}`);
       }
     } catch (err) {
@@ -446,23 +450,26 @@ async function callGeminiApiKey(message, systemInstruction) {
   }
 
   // 2. Try SDK fallback
-  const { GoogleGenerativeAI } = require("@google/generative-ai");
-  const genAI = new GoogleGenerativeAI(geminiApiKey);
+  try {
+    const { GoogleGenerativeAI } = require("@google/generative-ai");
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-  for (const modelName of modelsToTry) {
-    console.log(`📡 [Backend AI] Requesting AI Studio SDK (${modelName})...`);
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const chat = model.startChat({ generationConfig: { maxOutputTokens: 500, temperature: 0.2 } });
-      const result = await chat.sendMessage(systemInstruction + "\n\nUser Query: " + message);
-      const text = result.response.text();
-      if (text) {
-        console.log(`✅ [Backend AI] AI Studio SDK response received (${modelName})`);
-        return text;
+    for (const modelName of modelsToTry) {
+      console.log(`📡 [Backend AI] Requesting AI Studio SDK (${modelName})...`);
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(`${systemInstruction}\n\nUser Query: ${message}`);
+        const text = result.response.text();
+        if (text) {
+          console.log(`✅ [Backend AI] AI Studio SDK response received (${modelName})`);
+          return text;
+        }
+      } catch (err) {
+        console.error(`❌ [Backend AI] AI Studio SDK error [${modelName}]:`, err.message);
       }
-    } catch (err) {
-      console.error(`❌ [Backend AI] AI Studio SDK error [${modelName}]:`, err.message);
     }
+  } catch (sdkErr) {
+    console.error("❌ [Backend AI] SDK initialization error:", sdkErr.message);
   }
   return null;
 }
@@ -518,23 +525,23 @@ app.post("/api/chat", async (req, res) => {
     "You speak with deep empathy, confidentiality, and zero judgment. Keep answers under 3 sentences unless asked otherwise. " +
     "Always focus on mental safety, bias detection, and support resource availability.";
 
-  // 1. Try GCP Vertex AI (Enterprise GCP)
+  // 1. Try Google AI Studio API key
+  if (geminiApiKey) {
+    try {
+      const aiText = await callGeminiApiKey(message, systemInstruction);
+      if (aiText) return res.json({ text: aiText, source: "Google AI Studio" });
+    } catch (err) {
+      console.error("❌ AI Studio SDK error:", err.message);
+    }
+  }
+
+  // 2. Try GCP Vertex AI (Enterprise GCP)
   if (gcpProject) {
     try {
       const aiText = await callGeminiVertex(message, systemInstruction);
       if (aiText) return res.json({ text: aiText, source: "GCP Vertex AI" });
     } catch (err) {
       console.error("❌ Vertex AI error:", err.message);
-    }
-  }
-
-  // 2. Try Google AI Studio API key fallback
-  if (geminiApiKey) {
-    try {
-      const aiText = await callGeminiApiKey(message, systemInstruction);
-      if (aiText) return res.json({ text: aiText });
-    } catch (err) {
-      console.error("❌ AI Studio SDK error:", err.message);
     }
   }
 
@@ -562,23 +569,23 @@ app.post("/api/ai-intelligence", async (req, res) => {
     "Speak with empathy, clarity, and reassuring tone to de-escalate anxiety. " +
     "At the end of your answer, if relevant, remind the user that if they wish to formally document or raise a confidential concern, they can simply type 'raise concern' to start the guided reporting process.";
 
-  // 1. Try GCP Vertex AI (Enterprise GCP)
-  if (gcpProject) {
-    try {
-      const aiText = await callGeminiVertex(query, systemInstruction);
-      if (aiText) return res.json({ text: aiText, source: "Vertex Gemini" });
-    } catch (err) {
-      console.error("❌ Vertex AI error:", err.message);
-    }
-  }
-
-  // 2. Try Google AI Studio API key fallback
+  // 1. Try Google AI Studio API key
   if (geminiApiKey) {
     try {
       const aiText = await callGeminiApiKey(query, systemInstruction);
       if (aiText) return res.json({ text: aiText, source: "Gemini AI Model" });
     } catch (err) {
       console.error("❌ AI Studio SDK error:", err.message);
+    }
+  }
+
+  // 2. Try GCP Vertex AI (Enterprise GCP)
+  if (gcpProject) {
+    try {
+      const aiText = await callGeminiVertex(query, systemInstruction);
+      if (aiText) return res.json({ text: aiText, source: "Vertex Gemini" });
+    } catch (err) {
+      console.error("❌ Vertex AI error:", err.message);
     }
   }
 
@@ -876,8 +883,13 @@ const path = require("path");
 app.use(express.static(path.join(__dirname, "..")));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "..", "index.html")));
 
-app.listen(PORT, () => {
-  console.log(`🚀 listen360 Gateway running on port ${PORT}`);
-  console.log(`🌐 Frontend: http://localhost:${PORT}`);
-  console.log(`🔌 API:      http://localhost:${PORT}/api`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 listen360 Gateway running on port ${PORT}`);
+    console.log(`🌐 Frontend: http://localhost:${PORT}`);
+    console.log(`🔌 API:      http://localhost:${PORT}/api`);
+  });
+}
+
+module.exports = app;
+

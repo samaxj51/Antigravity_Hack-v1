@@ -6,14 +6,16 @@ package-lock.json
 
 # Environment variables & secrets
 .env
-.env.local
-.env.*.local
+.env.*
 *.env
+**/.env
+**/.env.*
 server/.env
 
 # Build outputs & cache
 dist/
 build/
+.vercel/
 .cache/
 *.log
 npm-debug.log*

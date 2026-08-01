@@ -551,7 +551,7 @@ app.post("/api/chat", async (req, res) => {
     "Thank you for sharing this. Your mental safety and workspace well-being are paramount.",
     "I appreciate your courage. I am documenting this with absolute confidentiality."
   ];
-  const responseText = `[Simulated AI] ${fallbacks[Math.floor(Math.random() * fallbacks.length)]} How else can I help?`;
+  const responseText = `${fallbacks[Math.floor(Math.random() * fallbacks.length)]} How else can I help?`;
   res.json({ text: responseText });
 });
 
